@@ -1,5 +1,6 @@
 // AchievementManager.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getInventoryItemQuantity } from './LocalDataManager';
 
 export const incrementAppOpenCount = async () => {
   try {
@@ -122,10 +123,11 @@ export const checkCleanDietAchievement = async () => {
 
 export const checkFishermanAchievement = async () => {
   try {
-    const caughtFish = await AsyncStorage.getItem('caughtFish');
-    const allFishTypes = ['Salmon', 'Tuna', 'Shrimp', 'Crab']; // Replace with actual fish types
-    if (caughtFish !== null && 
-        allFishTypes.every(type => JSON.parse(caughtFish).includes(type))) {
+    const salmon = await getInventoryItemQuantity('Salmon');
+    const tuna = await getInventoryItemQuantity('Tuna');
+    const shrimp = await getInventoryItemQuantity('Shrimp');
+    const crab = await getInventoryItemQuantity('Crab');
+    if (salmon > 0 && tuna > 0 && shrimp > 0 && crab > 0) {
       await markAchievementComplete('Fisherman');
     }
   } catch (error) {
@@ -135,10 +137,11 @@ export const checkFishermanAchievement = async () => {
 
 export const checkFarmerAchievement = async () => {
   try {
-    const harvestedCrops = await AsyncStorage.getItem('harvestedCrops');
-    const allCropTypes = ['Wheat', 'Cucumber', 'Onion', 'Potato']; // Replace with actual crop types
-    if (harvestedCrops !== null && 
-        allCropTypes.every(type => JSON.parse(harvestedCrops).includes(type))) {
+    const wheat = await getInventoryItemQuantity('Wheat');
+    const cucumber = await getInventoryItemQuantity('Cucumber');
+    const onion = await getInventoryItemQuantity('Onion');
+    const potato = await getInventoryItemQuantity('Potato');
+    if (wheat > 0 && cucumber > 0 && onion > 0 && potato > 0) {
       await markAchievementComplete('Farmer');
     }
   } catch (error) {

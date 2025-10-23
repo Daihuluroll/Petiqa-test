@@ -3,7 +3,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { StyleSheet, View, Text, TouchableOpacity, Alert } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import { updatePetWallet } from '../utils/LocalDataManager';
 import CheckCoin from '../utils/CheckCoin';
 import { completeTask } from '../utils/TaskManager';
 import {checkQuizAchievements} from '../utils/AchievementManager'
@@ -169,31 +169,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation }) => {
     completeTask('Daily quiz');
   }, []);
 
-  const updateCoins = async (oid: string, newCoins: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: 'Cluster-1',
-          database: 'Petiqa',
-          collection: 'allItems',
-          filter: { _id: { $oid: oid } },
-          update: { $set: { coins: newCoins } },
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            apiKey: 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0',
-          },
-        }
-      );
 
-      console.log('Coins updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating coins:', error);
-    }
-  };
 
   const handleBackButton = async () => {
     const petName = await AsyncStorage.getItem('petName');
@@ -222,9 +198,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation }) => {
     await checkQuizAchievements();
     }
     setUserCoins(updatedCoins);
-    if (oid) {
-      updateCoins(oid, updatedCoins);
-    }
+    await updatePetWallet({ coins: updatedCoins });
     await AsyncStorage.setItem('quizCompletedDate', new Date().toDateString());
     handleBackButton();
   };

@@ -4,7 +4,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-nati
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CheckPoint from '../utils/CheckPoint';
-import axios from 'axios';
+import { updatePetWallet } from '../utils/LocalDataManager';
 
 type RootStackParamList = {
   Home: undefined;
@@ -280,31 +280,7 @@ const AchievementScreen: React.FC<AchievementScreenProps> = ({ navigation }) => 
     fetchOid();
   }, []);
 
-  const updatePoints = async (oid: string, newPoints: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "points": newPoints } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Coins updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating coins:', error);
-    }
-  };
+
 
   useEffect(() => {
     loadAchievements();
@@ -345,9 +321,7 @@ const AchievementScreen: React.FC<AchievementScreenProps> = ({ navigation }) => 
   const updateReward = async (reward: number) => {
     const updatedPoints = userPoints + reward;
     setUserPoints(updatedPoints);
-    if (oid) {
-      updatePoints(oid, updatedPoints);
-    }
+    await updatePetWallet({ points: updatedPoints });
   };
   
 

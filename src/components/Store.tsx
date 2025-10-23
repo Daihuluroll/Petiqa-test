@@ -4,10 +4,10 @@ import { StyleSheet, View, Text, TouchableOpacity, Image, Modal, ScrollView, Ani
 import FastImage from 'react-native-fast-image';
 import CheckCoin from '../utils/CheckCoin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { completeTask } from '../utils/TaskManager';
 import { checkDressUpTimeAchievement, checkCoinSpendingAchievements } from '../utils/AchievementManager';
 import CheckPoint from '../utils/CheckPoint';
+import { updatePetWallet, adjustInventoryItem } from '../utils/LocalDataManager';
 
 type RootStackParamList = {
   Home: undefined;
@@ -110,79 +110,28 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
     fetchOid();
   }, []);
 
-  const updateCoins = async (oid: string, newCoins: number) => {
+  const updateCoins = async (newCoins: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Coins updated successfully:', response.data);
+      await updatePetWallet({ coins: newCoins });
+      console.log('Coins updated successfully');
     } catch (error) {
       console.error('Error updating coins:', error);
     }
   };
 
-  const updatePoints = async (oid: string, newPoints: number) => {
+  const updatePoints = async (newPoints: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "points": newPoints } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Coins updated successfully:', response.data);
+      await updatePetWallet({ points: newPoints });
+      console.log('Points updated successfully');
     } catch (error) {
-      console.error('Error updating coins:', error);
+      console.error('Error updating points:', error);
     }
   };
 
-  const updateItems = async (oid: string, itemName: string) => {
+  const updateItems = async (itemName: string) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } },
-          update: { "$inc": { [itemName]: 1 } }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Items updated successfully:', response.data);
+      await adjustInventoryItem(itemName, 1);
+      console.log('Items updated successfully');
     } catch (error) {
       console.error('Error updating items:', error);
     }
@@ -214,23 +163,21 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (selectedItem) {
       // Check if the user has enough coins
       if (userCoins >= selectedItem.price) {
         setPurchaseMessage(`You have purchased ${selectedItem.name}!`);
-        
+
         const updatedCoins = userCoins - selectedItem.price;
         setUserCoins(updatedCoins);
-        if (oid) {
-          updateCoins(oid, updatedCoins);
-          updateItems(oid, selectedItem.name);
-          checkCoinSpendingAchievements(selectedItem.price);
-          
-          // Check if the purchased item is an insurance product
-          if (insuranceItems.some(item => item.name === selectedItem.name)) {
-            completeTask('Buy an insurance product');
-          }
+        await updateCoins(updatedCoins);
+        await updateItems(selectedItem.name);
+        checkCoinSpendingAchievements(selectedItem.price);
+
+        // Check if the purchased item is an insurance product
+        if (insuranceItems.some(item => item.name === selectedItem.name)) {
+          completeTask('Buy an insurance product');
         }
       } else {
         setPurchaseMessage(`You don't have enough coins to buy ${selectedItem.name}.`);
@@ -242,19 +189,17 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
   };
 
   // New handler for cosmetic purchases
-  const handleCosmeticPurchase = () => {
+  const handleCosmeticPurchase = async () => {
     if (selectedItem) {
       if (userPoints >= selectedItem.price) {
         setPurchaseMessage(`You have purchased ${selectedItem.name} for ${selectedItem.price} points!`);
         const updatedPoints = userPoints - selectedItem.price;
         setUserPoints(updatedPoints);
-        if (oid) {
-          updatePoints(oid, updatedPoints);
-          updateItems(oid, selectedItem.name);
+        await updatePoints(updatedPoints);
+        await updateItems(selectedItem.name);
         // Logic to update points in the backend would go here
-          if (cosmeticsItems.some(item => item.name === selectedItem.name)) {
-            checkDressUpTimeAchievement();
-          }
+        if (cosmeticsItems.some(item => item.name === selectedItem.name)) {
+          checkDressUpTimeAchievement();
         }
       } else {
         setPurchaseMessage(`You don't have enough points to buy ${selectedItem.name}.`);

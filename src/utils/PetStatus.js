@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import axios from 'axios';
+import { getPetData, updatePetStatus } from './LocalDataManager';
 
 // Define BarRenderer Component
 const BarRenderer = ({ value, maxValue, type }) => {
@@ -39,107 +39,84 @@ const PetBarStatus = ({ oid }) => {
   const [happiness, setHappiness] = useState(0);
   const [hunger, setHunger] = useState(0);
   const [health, setHealth] = useState(0);
+  const intervalRef = useRef(null);
+  const currentStatsRef = useRef({ energy: 0, hunger: 0, happiness: 0 });
 
   useEffect(() => {
     const fetchPetStatus = async () => {
       try {
-        const response = await axios.post(
-          'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/findOne',
-          {
-            dataSource: "Cluster-1",
-            database: "Petiqa",
-            collection: "allItems",
-            filter: { "_id": { $oid: oid } }, // Use the oid to filter the data
-            projection: { energy: 1, happiness: 1, hunger: 1, health: 1 } // Fetch relevant fields
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0' // Use your actual API key
-            }
-          }
-        );
-
-        const petData = response.data.document;
-        setEnergy(petData.energy || 0);
-        setHappiness(petData.happiness || 0);
-        setHunger(petData.hunger || 0);
-        setHealth(petData.health || 0);
+        const petData = await getPetData();
+        if (petData) {
+          const newEnergy = petData.status.energy || 0;
+          const newHappiness = petData.status.happiness || 0;
+          const newHunger = petData.status.hunger || 0;
+          const newHealth = petData.status.health || 0;
+          setEnergy(newEnergy);
+          setHappiness(newHappiness);
+          setHunger(newHunger);
+          setHealth(newHealth);
+          currentStatsRef.current = { energy: newEnergy, hunger: newHunger, happiness: newHappiness };
+        }
       } catch (error) {
         console.error('Error fetching pet status', error);
       }
     };
 
-    fetchPetStatus();
+    if (oid) {
+      fetchPetStatus();
+    }
   }, [oid]);
 
-  // Function to update pet status in MongoDB
-  const updatePetStatus = async (updatedEnergy, updatedHunger, updatedHappiness) => {
+  // Function to update pet status locally
+  const updatePetStatusLocal = async (energyDelta, hungerDelta, happinessDelta) => {
     try {
-      await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { $oid: oid } },
-          update: {
-            $set: {
-              "energy": updatedEnergy,
-              "hunger": updatedHunger,
-              "happiness": updatedHappiness
-            }
-          }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      console.log('Pet status updated successfully');
+      const petData = await getPetData();
+      if (petData) {
+        const newEnergy = Math.max(0, Math.min(100, petData.status.energy + energyDelta));
+        const newHunger = Math.max(0, Math.min(100, petData.status.hunger + hungerDelta));
+        const newHappiness = Math.max(0, Math.min(100, petData.status.happiness + happinessDelta));
+
+        await updatePetStatus({
+          energy: newEnergy,
+          hunger: newHunger,
+          happiness: newHappiness
+        });
+        console.log('Pet status updated successfully');
+      }
     } catch (error) {
       console.error('Error updating pet status', error);
     }
   };
 
-  // Deplete hunger and sleepiness every 30 minutes
+  // Deplete hunger and happiness, regenerate energy every 30 seconds
   useEffect(() => {
-    const petStatusOvertime = setInterval(() => {
-      setEnergy(prev => {
-        if (prev < 100) {
-            const updatedEnergy = Math.max(prev + 5, 0);
-            updatePetStatus(updatedEnergy, hunger, happiness); 
-            return updatedEnergy;
-        }
-        return prev;
-      });
+    intervalRef.current = setInterval(async () => {
+      // Calculate deltas based on current ref state
+      const current = currentStatsRef.current;
+      const energyDelta = current.energy < 100 ? 5 : 0;
+      const hungerDelta = current.hunger > 0 ? -5 : 0;
+      const happinessDelta = current.happiness > 0 ? -10 : 0;
 
-      setHunger(prev => {
-        if (prev > 0) {
-            const updatedHunger = Math.max(prev - 5, 0);
-            updatePetStatus(energy, updatedHunger, happiness);
-            return updatedHunger;
-        }
-        return prev;
-      });
+      // Update the database with the deltas
+      await updatePetStatusLocal(energyDelta, hungerDelta, happinessDelta);
 
-      setHappiness(prev => {
-        if (prev > 0) {
-            const updatedHappiness = Math.max(prev - 10, 0);
-            updatePetStatus(energy, hunger, updatedHappiness);
-            return updatedHappiness;
-        }
-        return prev;
-      });
-    }, 30 * 1000); // 0.5 minutes in milliseconds
+      // Calculate new values and update ref and local state
+      const newEnergy = Math.max(current.energy + energyDelta, 0);
+      const newHunger = Math.max(current.hunger + hungerDelta, 0);
+      const newHappiness = Math.max(current.happiness + happinessDelta, 0);
+      currentStatsRef.current = { energy: newEnergy, hunger: newHunger, happiness: newHappiness };
+      setEnergy(newEnergy);
+      setHunger(newHunger);
+      setHappiness(newHappiness);
+    }, 30 * 1000); // 30 seconds in milliseconds
 
     // Cleanup interval on component unmount
-    return () => clearInterval(petStatusOvertime);
-  }, [energy, hunger, happiness, oid]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [oid]); // Remove dependencies to prevent re-setting interval
 
   return (
     <View style={styles.container}>

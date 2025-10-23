@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { completeTask } from '../utils/TaskManager';
 import GetPetStatus from '../utils/GetPetStatus';
 import CheckCoin from '../utils/CheckCoin';
-import axios from 'axios';
+import { updatePetStatus, updatePetWallet, adjustInventoryItem } from '../utils/LocalDataManager';
 
 type RootStackParamList = {
   Home: undefined;
@@ -63,59 +63,7 @@ const TravellingScreen: React.FC<TravellingScreenProps> = ({ navigation }) => {
     fetchOid();
   }, []);
 
-  const updatePetStatus = async (oid: string, newEnergy: number, newHappiness: number, newHunger: number, newHealth: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": 
-            { "energy": newEnergy, "happiness": newHappiness, "hunger": newHunger, "health": newHealth }
-          }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Energy updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating energy:', error);
-    }
-  };
 
-  const updateCoins = async (oid: string, newCoins: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Coins updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating coins:', error);
-    }
-  };
 
   const handleBackButton = async () => {
     const petName = await AsyncStorage.getItem('petName');
@@ -154,8 +102,8 @@ const TravellingScreen: React.FC<TravellingScreenProps> = ({ navigation }) => {
       const updatedCoins = userCoins - selectedItem.price;
   
       if (oid) {
-        updatePetStatus(oid, updatedEnergy, updatedHappiness, updatedHunger, updatedHealth);
-        updateCoins(oid, updatedCoins);
+        updatePetStatus({ energy: updatedEnergy, happiness: updatedHappiness, hunger: updatedHunger, health: updatedHealth });
+        updatePetWallet({ coins: updatedCoins });
       }
   
       navigateToLocation(selectedLocation);

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { StatusSnapshot, WalletSnapshot, InventoryEntry } from '../../shared/mongo/pet-profile.schema';
 
 export class CreatePetDto {
   @ApiProperty({
@@ -20,4 +21,22 @@ export class CreatePetDto {
   @IsString()
   @MaxLength(50)
   character?: string;
+
+  @ApiPropertyOptional({
+    description: 'Initial status snapshot',
+  })
+  @IsOptional()
+  initialStatus?: StatusSnapshot;
+
+  @ApiPropertyOptional({
+    description: 'Initial wallet snapshot',
+  })
+  @IsOptional()
+  initialWallet?: WalletSnapshot;
+
+  @ApiPropertyOptional({
+    description: 'Initial inventory entries',
+  })
+  @IsOptional()
+  initialInventory?: Record<string, InventoryEntry>;
 }

@@ -3,8 +3,8 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { StyleSheet, View, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import GetPetStatus from '../utils/GetPetStatus';
+import { adjustPetStatus } from '../utils/LocalDataManager';
 
 type RootStackParamList = {
   Home: undefined;
@@ -60,33 +60,7 @@ const GymScreen: React.FC<GymScreenProps> = ({ navigation }) => {
     fetchOid();
   }, []);
 
-  const updatePetStatus = async (oid: string, newEnergy: number, newHappiness: number, newHunger: number, newHealth: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": 
-            { "energy": newEnergy, "happiness": newHappiness, "hunger": newHunger, "health": newHealth }
-          }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Energy updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating energy:', error);
-    }
-  };
+
 
   // Function to handle back button functionality
   const handleBackButton = async () => {
@@ -102,7 +76,7 @@ const GymScreen: React.FC<GymScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleConsumption = (energy: number, happiness: number, hunger: number, health: number, screen: string) => {
+  const handleConsumption = async (energy: number, happiness: number, hunger: number, health: number, screen: string) => {
     if (energyValue >= 20) {
       const updatedEnergy = Math.min(100, Math.max(0, energyValue + energy));
         setEnergyValue(updatedEnergy);
@@ -116,11 +90,8 @@ const GymScreen: React.FC<GymScreenProps> = ({ navigation }) => {
         const updatedHealth = Math.min(100, Math.max(0, healthValue + health));
         setHealthValue(updatedHealth);
 
-
-        if (oid) {
-          updatePetStatus(oid, updatedEnergy, updatedHappiness, updatedHunger, updatedHealth);
-          handleNavigation(screen);
-        }
+        await adjustPetStatus({ energy, happiness, hunger, health });
+        handleNavigation(screen);
     } else {
       setModalVisible(true);
       console.log(`You don't have enough energy.`);

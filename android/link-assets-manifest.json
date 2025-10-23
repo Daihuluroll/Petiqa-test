@@ -1,0 +1,49 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/FFFFORWA.TTF",
+      "sha1": "b68e6190952c7e56a56601b93b5fb377873ea171"
+    },
+    {
+      "path": "assets/fonts/joystix monospace.otf",
+      "sha1": "60f1d6eff7369a7036b6dce5e02ec8003c7342da"
+    },
+    {
+      "path": "assets/fonts/lunchds.ttf",
+      "sha1": "0ea55d1ad433f77ce949a224c9051ddfeef08372"
+    },
+    {
+      "path": "assets/fonts/novem.ttf",
+      "sha1": "f82734ea303de411dbb427d2917dbc2d796c415c"
+    },
+    {
+      "path": "assets/fonts/PixelFJVerdana12pt.ttf",
+      "sha1": "50f27a4fda8bdbb690c459e7f8a8ac18195fbec3"
+    },
+    {
+      "path": "assets/fonts/PixelifySansBold.ttf",
+      "sha1": "5a099af48ac82abb545b2aa6e18196ee600bdbe9"
+    },
+    {
+      "path": "assets/fonts/PixelifySansMedium.ttf",
+      "sha1": "a263d2ddd97921f3c758744eee58d1fe2249dbd2"
+    },
+    {
+      "path": "assets/fonts/PixelifySansRegular.ttf",
+      "sha1": "6823aad854133e5984858ddcb5c8b310a856a850"
+    },
+    {
+      "path": "assets/fonts/PixelifySansSemiBold.ttf",
+      "sha1": "6d367047aad93dd5c6d9ddaf7ad96076d67bea2c"
+    },
+    {
+      "path": "assets/fonts/PixelifySansVariableFontwght.ttf",
+      "sha1": "4a2d76e87c9d3754109a9400800dace60b85aa42"
+    },
+    {
+      "path": "assets/fonts/Toriko.ttf",
+      "sha1": "a4257e8a4fb6ba1b00ebcecc7a21c0b19d296f9d"
+    }
+  ]
+}

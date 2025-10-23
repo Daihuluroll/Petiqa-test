@@ -3,10 +3,10 @@ import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, GestureResponde
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import CheckCoin from '../utils/CheckCoin';
 import { completeTask } from '../utils/TaskManager';
 import { checkFishermanAchievement } from '../utils/AchievementManager';
+import { updatePetWallet, adjustInventoryItem } from '../utils/LocalDataManager';
 
 const fishImages = [
   require('../assets/images/fish1.png'),
@@ -75,43 +75,17 @@ const FishingScreen: React.FC = () => {
   }, []);
 
 
-  const updateCoins = async (oid: string, newCoins: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Coins updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating coins:', error);
-    }
-  };
+
 
 
 
     // Assign a random reward
-    const assignRandomReward = () => {
+    const assignRandomReward = async () => {
       const randomReward = rewards[Math.floor(Math.random() * rewards.length)];
       Alert.alert(`You caught: ${randomReward}!`, 'You earned 10 coins with it!');
       const updatedCoins = userCoins + 10;
       setUserCoins(updatedCoins);
-      if (oid) {
-        updateCoins(oid, updatedCoins);
-      }
+      await updatePetWallet({ coins: updatedCoins });
     };
 
   // Handle fishing rod action (catching a fish)
@@ -122,20 +96,12 @@ const FishingScreen: React.FC = () => {
         fishes.map((fish, index) => (index === fishIndex ? Math.random() * 300 : fish))
       );
       const caughtFishType = rewards[Math.floor(Math.random() * rewards.length)];
-      
-      try {
-        // Update caught fish in AsyncStorage
-        const caughtFish = await AsyncStorage.getItem('caughtFish');
-        let fishArray = caughtFish ? JSON.parse(caughtFish) : [];
-        if (!fishArray.includes(caughtFishType)) {
-          fishArray.push(caughtFishType);
-          await AsyncStorage.setItem('caughtFish', JSON.stringify(fishArray));
-          // Check achievement after updating storage
-          await checkFishermanAchievement();
-        }
-      } catch (error) {
-        console.error('Error updating caught fish:', error);
-      }
+
+      // Add caught item to inventory
+      await adjustInventoryItem(caughtFishType, 1);
+
+      // Check achievement
+      await checkFishermanAchievement();
     }
     completeTask('Catch fish / Harvest crops once');
   };

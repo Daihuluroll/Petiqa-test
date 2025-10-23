@@ -10,7 +10,8 @@ import { addVisitedLocation } from '../utils/AchievementManager';
 import { checkAccidentProneAchievement } from '../utils/AchievementManager';
 import CheckInsurance from '../utils/CheckInsurance';
 import CheckCoin from '../utils/CheckCoin';
-import axios from 'axios';
+import GetPetStatus from '../utils/GetPetStatus';
+import { updatePetWallet, adjustInventoryItem, adjustPetStatus } from '../utils/LocalDataManager';
 
 type RootStackParamList = {
   Home: undefined;
@@ -65,6 +66,7 @@ const HollywoodScreen: React.FC<HollywoodScreenProps> = ({ route, navigation }) 
   const [oid, setOid] = useState<string | null>(null);
   const [itemValue, setItemValue] = useState<number>(0);
   const [userCoins, setUserCoins] = useState<number>(0);
+  const [energyValue, setEnergyValue] = useState<number>(0);
 
   useEffect(() => {
     const fetchOid = async () => {
@@ -83,57 +85,7 @@ const HollywoodScreen: React.FC<HollywoodScreenProps> = ({ route, navigation }) 
     fetchOid();
   }, []);
 
-  const updateInsurance = async (oid: string) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } },
-          update: { "$inc": { "Traveling": -1 } }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Items updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating items:', error);
-    }
-  };
 
-  const updateCoins = async (oid: string, newCoins: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Coins updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating coins:', error);
-    }
-  };
 
   const getBackgroundImage = () => require('../assets/images/hollywoodBG.jpeg');
 
@@ -169,23 +121,29 @@ const HollywoodScreen: React.FC<HollywoodScreenProps> = ({ route, navigation }) 
 
   // Check for random events
   const checkForRandomEvents = async () => {
-    const randomEvent = Math.random();
-    if (randomEvent < 0.1) { // 10% chance for luggage lost event
-      setModalVisible(true);
-      setMessage("Oh no! The airport lost your luggage...");
-      completeTask('Encounter any random event once');
-      const currentCount = await AsyncStorage.getItem('lostLuggageEvents');
-      const newCount = currentCount ? parseInt(currentCount) + 1 : 1;
-      await AsyncStorage.setItem('lostLuggageEvents', newCount.toString());
+    try {
+      const randomEvent = Math.random();
+      if (randomEvent < 1) { // 10% chance for luggage lost event
+        setModalVisible(true);
+        setMessage("Oh no! The airport lost your luggage...");
+        completeTask('Encounter any random event once');
+        const currentCount = await AsyncStorage.getItem('lostLuggageEvents');
+        const newCount = currentCount ? parseInt(currentCount) + 1 : 1;
+        await AsyncStorage.setItem('lostLuggageEvents', newCount.toString());
 
-    // Check for the Accident prone achievement
-    checkAccidentProneAchievement();
-    } else if (randomEvent < 0.2) { // 10% chance for friend encounter
-      setModalVisible(true);
-      setMessage("You have encountered a friend while travelling, how nice! You gain +10 energy");
-      completeTask('Encounter any random event once');
+        // Check for the Accident prone achievement
+        checkAccidentProneAchievement();
+      } else if (randomEvent < 0.2) { // 10% chance for friend encounter
+        setModalVisible(true);
+        setMessage("You have encountered a friend while travelling, how nice! You gain +10 energy");
+        completeTask('Encounter any random event once');
+        await adjustPetStatus({ energy: 10 });
+        setEnergyValue((prev) => Math.min(100, prev + 10));
+      }
+      // 80% chance for nothing to happen (do nothing)
+    } catch (error) {
+      console.error('Error in checkForRandomEvents:', error);
     }
-    // 80% chance for nothing to happen (do nothing)
   };
 
   // Handle modal close and check for insurance
@@ -197,14 +155,14 @@ const HollywoodScreen: React.FC<HollywoodScreenProps> = ({ route, navigation }) 
         setInsuranceModalVisible(true);
         setInsuranceMessage("Luckily you have travelling insurance! You don't have to pay since the insurance company will cover the cost of the lost luggage.");
         if (oid) {
-          updateInsurance(oid);
+          adjustInventoryItem('Traveling', -1);
         }
       } else {
         setInsuranceModalVisible(true);
         setInsuranceMessage("Sadly you don't have travelling insurance... you will have to cover the cost of the lost luggage yourself. You lost 50 coins");
         const updatedCoins = userCoins - 50;
         if (oid) {
-          updateCoins(oid, updatedCoins);
+          updatePetWallet({ coins: updatedCoins });
         }
       }
     }
@@ -298,6 +256,7 @@ const HollywoodScreen: React.FC<HollywoodScreenProps> = ({ route, navigation }) 
       )}
       {oid && <CheckInsurance oid={oid} onItemFetch={setItemValue} />}
       {oid && <CheckCoin oid={oid} onCoinFetch={setUserCoins} />}
+      {oid && <GetPetStatus oid={oid} onEnergyFetch={setEnergyValue} onHappinessFetch={() => {}} onHungerFetch={() => {}} onHealthFetch={() => {}} />}
 
       {renderCosmetics()}
       <TouchableOpacity style={styles.backButton} onPress={() => handleBackButton(navigation)}>

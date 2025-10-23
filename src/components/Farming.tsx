@@ -4,9 +4,9 @@ import FastImage from 'react-native-fast-image';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CheckCoin  from '../utils/CheckCoin';
-import axios from 'axios';
 import { completeTask } from '../utils/TaskManager';
 import { checkFarmerAchievement } from '../utils/AchievementManager';
+import { updatePetWallet, adjustInventoryItem } from '../utils/LocalDataManager';
 
 const cropImages = [
   require('../assets/images/crop1.png'),
@@ -70,42 +70,16 @@ const FarmingScreen: React.FC = () => {
   }, []);
 
 
-  const updateCoins = async (oid: string, newCoins: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Coins updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating coins:', error);
-    }
-  };
 
 
 
-  const assignRandomReward = () => {
+
+  const assignRandomReward = async () => {
     const randomReward = rewards[Math.floor(Math.random() * rewards.length)];
     Alert.alert(`You harvested: ${randomReward}!`, 'You earned 10 coins with it!');
     const updatedCoins = userCoins + 10;
     setUserCoins(updatedCoins);
-    if (oid) {
-      updateCoins(oid, updatedCoins);
-    }
+    await updatePetWallet({ coins: updatedCoins });
   };
 
   const handleWaterCrop = async (cropIndex: number) => {
@@ -115,20 +89,12 @@ const FarmingScreen: React.FC = () => {
         crops.map((crop, index) => (index === cropIndex ? Math.random() * 300 : crop))
       );
       const harvestedCropType = rewards[Math.floor(Math.random() * rewards.length)];
-      
-      try {
-        // Update harvested crops in AsyncStorage
-        const harvestedCrops = await AsyncStorage.getItem('harvestedCrops');
-        let cropsArray = harvestedCrops ? JSON.parse(harvestedCrops) : [];
-        if (!cropsArray.includes(harvestedCropType)) {
-          cropsArray.push(harvestedCropType);
-          await AsyncStorage.setItem('harvestedCrops', JSON.stringify(cropsArray));
-          // Check achievement after updating storage
-          await checkFarmerAchievement();
-        }
-      } catch (error) {
-        console.error('Error updating harvested crops:', error);
-      }
+
+      // Add harvested item to inventory
+      await adjustInventoryItem(harvestedCropType, 1);
+
+      // Check achievement
+      await checkFarmerAchievement();
     }
     completeTask('Catch fish / Harvest crops once');
   };

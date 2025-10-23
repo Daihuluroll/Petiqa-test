@@ -5,7 +5,7 @@ import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loadTaskStatus, completeTask } from '../utils/TaskManager';
 import CheckCoin from '../utils/CheckCoin';
-import axios from 'axios';
+import { updatePetWallet } from '../utils/LocalDataManager';
 
 interface TaskStatus {
   [key: string]: boolean;
@@ -35,10 +35,13 @@ const taskList = [
   'Encounter any random event once',
 ];
 
-// Helper function to get random tasks
+// Helper function to get random tasks, always including 'Daily Check in'
 const getRandomTasks = (list: string[], count: number) => {
-  const shuffled = [...list].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
+  const fixedTask = 'Daily Check in';
+  const otherTasks = list.filter(task => task !== fixedTask);
+  const shuffled = [...otherTasks].sort(() => 0.5 - Math.random());
+  const randomTasks = shuffled.slice(0, count - 1);
+  return [fixedTask, ...randomTasks];
 };
 
 // Helper function to get the current date in a string format (used for task updates)
@@ -170,31 +173,7 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
   }, []);
 
 
-  const updateCoins = async (oid: string, newCoins: number) => {
-    try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Coins updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating coins:', error);
-    }
-  };
+
 
   const rewardSystem = async (taskName: string) => {
     if (taskStatus[taskName] && !taskStatus[`${taskName}_claimed`]) {
@@ -207,9 +186,7 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
       await completeTask(taskName);
 
       setUserCoins(updatedCoins);
-      if (oid) {
-        updateCoins(oid, updatedCoins);
-      }
+      await updatePetWallet({ coins: updatedCoins });
     } else {
       Alert.alert('Reward already claimed', 'You have already claimed this reward.');
     }

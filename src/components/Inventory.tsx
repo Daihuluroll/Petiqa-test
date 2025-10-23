@@ -3,7 +3,6 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import GetItems from '../utils/GetItem';
 import CheckItem from '../utils/CheckItem';
 import UseItem from '../utils/UseItem';
@@ -11,6 +10,7 @@ import GetPetStatus from '../utils/GetPetStatus';
 import { foodItems, toyItems, insuranceItems, cosmeticsItems } from '../utils/sharedData';
 import { completeTask } from '../utils/TaskManager';
 import { incrementInsuranceUseCount, checkCleanDietAchievement } from '../utils/AchievementManager';
+import { updatePetStatus as updateLocalPetStatus } from '../utils/LocalDataManager';
 
 type RootStackParamList = {
   Home: undefined;
@@ -72,31 +72,12 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
     fetchOid();
   }, []);
 
-  const updatePetStatus = async (oid: string, newEnergy: number, newHappiness: number, newHunger: number, newHealth: number) => {
+  const updatePetStatus = async (newEnergy: number, newHappiness: number, newHunger: number, newHealth: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": 
-            { "energy": newEnergy, "happiness": newHappiness, "hunger": newHunger, "health": newHealth }
-          }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Energy updated successfully:', response.data);
+      await updateLocalPetStatus({ energy: newEnergy, happiness: newHappiness, hunger: newHunger, health: newHealth });
+      console.log('Pet status updated successfully');
     } catch (error) {
-      console.error('Error updating energy:', error);
+      console.error('Error updating pet status:', error);
     }
   };
 
@@ -176,7 +157,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
           <Text style={styles.itemText}>{item.name}</Text>
           <View style={styles.itemQuantityContainer}>
             <Text style={styles.itemQuantity}>x</Text>
-            <Text style={styles.itemQuantityNumber}>{oid && <GetItems key={`refresh-${refreshToggle}`} oid={oid} item={item.name} />}</Text>
+            {oid && <GetItems key={`refresh-${refreshToggle}`} oid={oid} item={item.name} />}
           </View>
         </View>
       </TouchableOpacity>
@@ -202,10 +183,8 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
         setHealthValue(updatedHealth);
 
 
-        if (oid) {
-          updatePetStatus(oid, updatedEnergy, updatedHappiness, updatedHunger, updatedHealth);
-          setIsEating(true);
-        }
+        updatePetStatus(updatedEnergy, updatedHappiness, updatedHunger, updatedHealth);
+        setIsEating(true);
       } else {
         showNotEnoughItemsModal();
       }
@@ -225,10 +204,8 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
         const updatedHealth = Math.min(100, Math.max(0, healthValue + healthCost));
         setHealthValue(updatedHealth);
 
-        if (oid) {
-          updatePetStatus(oid, updatedEnergy, updatedHappiness, updatedHunger, updatedHealth);
-          setIsUsing(true);
-        }
+        updatePetStatus(updatedEnergy, updatedHappiness, updatedHunger, updatedHealth);
+        setIsUsing(true);
       } else {
         showNotEnoughItemsModal();
       }

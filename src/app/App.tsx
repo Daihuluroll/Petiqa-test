@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator, StackScreenProps } from '@react-navigation/stack';
-import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+// import axios from 'axios';
+// import { baseUrl } from '../../config';
 import MainGame from '../components/MainGame';
 import Store from '../components/Store';
 import Inventory from '../components/Inventory';
@@ -57,61 +58,56 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 const savePetName = async (petName: string) => {
   try {
-    const response = await axios.post(
-      'https://ap-southeast-1.aws.data.mongodb-api.com/app/petdata-byqpwja/endpoint/data/v1/action/insertOne', {
-        dataSource: "Cluster-1",
-        database: "Petiqa",
-        collection: "allItems",
-        document: 
-          { "petName": petName,
-            "energy": 100,
-            "happiness": 100,
-            "hunger": 100,
-            "health": 100,
-            "coins": 10000,
-            "points": 1000,
-            "salmon": 0,
-            "shrimp": 0,
-            "crab": 0,
-            "tuna": 0,
-            "wheat": 0,
-            "onion": 0,
-            "potato": 0,
-            "cucumber": 0,
-            "Pet Food": 0,
-            "Treats": 0,
-            "Chocolate Cake": 0,
-            "Salad": 0,
-            "Sausage": 0,
-            "Potato Chips": 0,
-            "Pizza": 0,
-            "Fruits": 0,
-            "Gaming Console": 0,
-            "Football": 0,
-            "Piano": 0,
-            "Darts": 0,
-            "Taiko Drum": 0,
-            "Book": 0,
-            "Traveling": 0,
-            "Medical": 0,
-            "Accident": 0
-          }
-        },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'apiKey': '44790142-9a06-406f-b7b6-672e604bc8cd'
-        }
+    const petData = {
+      petName: petName,
+      status: {
+        energy: 100,
+        happiness: 100,
+        hunger: 100,
+        health: 100,
+      },
+      wallet: {
+        coins: 10000,
+        points: 1000,
+      },
+      inventory: {
+        "Pet Food": { name: "Pet Food", kind: "food", quantity: 1 },
+        "Treats": { name: "Treats", kind: "food", quantity: 1 },
+        "Chocolate Cake": { name: "Chocolate Cake", kind: "food", quantity: 1 },
+        "Salad": { name: "Salad", kind: "food", quantity: 1 },
+        "Sausage": { name: "Sausage", kind: "food", quantity: 1 },
+        "Potato Chips": { name: "Potato Chips", kind: "food", quantity: 1 },
+        "Pizza": { name: "Pizza", kind: "food", quantity: 1 },
+        "Fruits": { name: "Fruits", kind: "food", quantity: 1 },
+        "Gaming Console": { name: "Gaming Console", kind: "toy", quantity: 1 },
+        "Football": { name: "Football", kind: "toy", quantity: 1 },
+        "Piano": { name: "Piano", kind: "toy", quantity: 1 },
+        "Darts": { name: "Darts", kind: "toy", quantity: 1 },
+        "Taiko Drum": { name: "Taiko Drum", kind: "toy", quantity: 1 },
+        "Book": { name: "Book", kind: "toy", quantity: 1 },
+        "Traveling": { name: "Traveling", kind: "misc", quantity: 1 },
+        "Medical": { name: "Medical", kind: "insurance", quantity: 1 },
+        "Accident": { name: "Accident", kind: "insurance", quantity: 1 },
+        "Top Hat": { name: "Top Hat", kind: "cosmetic", quantity: 0 },
+        "Police Hat": { name: "Police Hat", kind: "cosmetic", quantity: 0 },
+        "Soldier Helm": { name: "Soldier Helm", kind: "cosmetic", quantity: 0 },
+        "Bow Tie": { name: "Bow Tie", kind: "cosmetic", quantity: 0 },
+        "Suit Tie": { name: "Suit Tie", kind: "cosmetic", quantity: 0 },
+        "Gold Chain": { name: "Gold Chain", kind: "cosmetic", quantity: 0 },
+        "Police Badge": { name: "Police Badge", kind: "cosmetic", quantity: 0 },
+        "Baseball Cap": { name: "Baseball Cap", kind: "cosmetic", quantity: 0 },
+        "Sunglasses": { name: "Sunglasses", kind: "cosmetic", quantity: 0 }
       }
-    );
+    };
 
-    const oid = response.data.insertedId;
+    await AsyncStorage.setItem('petData', JSON.stringify(petData));
+    const oid = 'local-pet-' + Date.now(); // Generate a local OID
     console.log("Successfully created new pet details with oid:", oid);
 
     return oid;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error saving pet name:", error);
+    return null;
   }
 };
 
@@ -122,14 +118,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
  
 
   const checkPetData = async () => {
-    const petName = await AsyncStorage.getItem('petName');
-    const character = await AsyncStorage.getItem('character');
-    if (petName && character) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MainGame', params: { petName, character } }],
-      });
-    } else {
+    try {
+      const petName = await AsyncStorage.getItem('petName');
+      const character = await AsyncStorage.getItem('character');
+      console.log('checkPetData - petName:', petName, 'character:', character);
+      if (petName && character) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainGame', params: { petName, character } }],
+        });
+      } else {
+        navigation.navigate('CreateName');
+      }
+    } catch (error) {
+      console.error('Error in checkPetData:', error);
       navigation.navigate('CreateName');
     }
   };
@@ -187,10 +189,19 @@ const CreateName: React.FC<CreateNameProps> = ({ navigation }) => {
       setError(validationError);
     } else {
       setError(null);
-      const oid = await savePetName(petName);
-      await AsyncStorage.setItem('petName', petName);  // Save pet name
-      await AsyncStorage.setItem('oid', oid);
-      navigation.navigate('PetSelection', { petName });
+      try {
+        const oid = await savePetName(petName);
+        if (oid) {
+          await AsyncStorage.setItem('petName', petName);  // Save pet name
+          await AsyncStorage.setItem('oid', oid);
+          navigation.navigate('PetSelection', { petName });
+        } else {
+          setError('Failed to create pet. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error in handleContinue:', error);
+        Alert.alert('Error', 'An error occurred while creating your pet. Please try again.');
+      }
     }
   };
 
@@ -246,8 +257,14 @@ const PetSelection: React.FC<PetSelectionProps> = ({ navigation, route }) => {
   const selectedCharacter = characters[currentCharacterIndex];
 
   const handleContinue = async () => {
-    await AsyncStorage.setItem('character', selectedCharacter.name);  // Save selected character
-    navigation.navigate('MainGame', { petName, character: selectedCharacter.name });
+    try {
+      await AsyncStorage.setItem('character', selectedCharacter.name);  // Save selected character
+      console.log('Navigating to MainGame with petName:', petName, 'character:', selectedCharacter.name);
+      navigation.navigate('MainGame', { petName, character: selectedCharacter.name });
+    } catch (error) {
+      console.error('Error in PetSelection handleContinue:', error);
+      Alert.alert('Error', 'An error occurred while saving your character. Please try again.');
+    }
   };
 
   return (

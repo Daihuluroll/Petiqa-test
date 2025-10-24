@@ -39,3 +39,8 @@
 - Converted DisplayCoin/DisplayPoint and CheckCoin/CheckPoint/CheckItem/CheckInsurance to `.tsx` with typed props.
 - Ported `GetItem` to `.tsx` and removed unused view imports.
 - Attempted `npx tsc --noEmit`; run blocked by missing backend dependencies, so TS gate deferred until those packages are restored.
+
+## 2025-10-24 Step 9 - Convert remaining React utils
+- Migrated `GetPetStatus`, `UseItem`, `PetStatus`, and `GetEnergy` to `.tsx` and added explicit prop/state types.
+- Added typed status interval handling in `PetStatus` with guards for absent `oid`.
+- Ready to tackle config cleanup next so TypeScript is the only runtime source format.

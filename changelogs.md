@@ -34,3 +34,8 @@
 - Catalogued the remaining `.js` utilities in `src/utils` and their consuming screens.
 - Confirmed `config.js` and `GetEnergy.js` are unused so they can be removed or converted last.
 - Ready to begin converting helpers to `.tsx` with typed props in the next step.
+
+## 2025-10-24 Step 8 - Port shared helpers to TSX
+- Converted DisplayCoin/DisplayPoint and CheckCoin/CheckPoint/CheckItem/CheckInsurance to `.tsx` with typed props.
+- Ported `GetItem` to `.tsx` and removed unused view imports.
+- Attempted `npx tsc --noEmit`; run blocked by missing backend dependencies, so TS gate deferred until those packages are restored.

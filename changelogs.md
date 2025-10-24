@@ -1,0 +1,26 @@
+﻿# Changelogs
+
+## 2025-10-24 Step 1 - Scaffold migration
+- Created initial src/app structure and moved the template App component there.
+- Pointed index.js to src/app/App so upcoming migrations plug in cleanly.
+- Verified the default React Native screen still renders as before.
+
+## 2025-10-24 Step 2 - Port shared resources
+- Copied legacy assets, components, and utilities into src to match the prior project layout.
+- Migrated config.ts/config.js so existing imports resolve without edits.
+- Confirmed files landed under src with original relative paths intact.
+
+## 2025-10-24 Step 3 - Align dependencies and native assets
+- Added navigation, storage, and gameplay library dependencies required by the migrated code.
+- Registered font assets via react-native.config.js to match the legacy setup.
+- Note: run `npm install` in PetiqaNext to refresh node_modules and package-lock.json.
+
+## 2025-10-24 Step 4 - Move Petiqa app shell
+- Replaced the placeholder App component with the legacy navigation-driven App from Petiqa-test.
+- Ensured the gesture handler bootstrap runs before app registration in index.js.
+- Ready for runtime validation of the migrated feature set.
+
+## 2025-10-24 Step 5 - First bridged run
+- Installed updated dependencies and rebuilt the Android app on the device.
+- Confirmed the migrated shell launches without registration errors.
+- Ready to iterate on feature verification and modernize configuration next.

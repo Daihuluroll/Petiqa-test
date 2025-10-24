@@ -48,3 +48,8 @@
 ## 2025-10-24 Step 10 - Remove redundant config.js
 - Deleted the unused `config.js` shim; `config.ts` remains the sole source for future environment settings.
 - Confirmed there are no live imports of the JS version (only a commented reference in `App.tsx`).
+
+## 2025-10-24 Step 11 - Enforce TypeScript gate
+- Pointed tests at the new `src/app/App` entry and tightened `tsconfig.json` (`noImplicitAny`, `strictNullChecks`, backend exclusion).
+- Added npm scripts `typecheck` and `verify` so CI/pre-commit flows can run ESLint plus `tsc --noEmit`.
+- Verified `npx tsc --noEmit` now passes after excluding the backend project.

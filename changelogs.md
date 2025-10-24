@@ -24,3 +24,13 @@
 - Installed updated dependencies and rebuilt the Android app on the device.
 - Confirmed the migrated shell launches without registration errors.
 - Ready to iterate on feature verification and modernize configuration next.
+
+## 2025-10-24 Step 6 - Legacy project comparison
+- Documented why PetiqaNext runs while Petiqa-test stalls: RN 0.76 template vs 0.74 legacy stack.
+- Noted Metro port mismatch (8081 vs 8082) and new-architecture toggle differences.
+- Recorded older project prerequisites: `npm install`, `npm run start`, and `npx react-native run-android --port 8082`.
+
+## 2025-10-24 Step 7 - TypeScript migration prep
+- Catalogued the remaining `.js` utilities in `src/utils` and their consuming screens.
+- Confirmed `config.js` and `GetEnergy.js` are unused so they can be removed or converted last.
+- Ready to begin converting helpers to `.tsx` with typed props in the next step.

@@ -44,3 +44,7 @@
 - Migrated `GetPetStatus`, `UseItem`, `PetStatus`, and `GetEnergy` to `.tsx` and added explicit prop/state types.
 - Added typed status interval handling in `PetStatus` with guards for absent `oid`.
 - Ready to tackle config cleanup next so TypeScript is the only runtime source format.
+
+## 2025-10-24 Step 10 - Remove redundant config.js
+- Deleted the unused `config.js` shim; `config.ts` remains the sole source for future environment settings.
+- Confirmed there are no live imports of the JS version (only a commented reference in `App.tsx`).

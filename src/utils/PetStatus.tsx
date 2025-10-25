@@ -1,7 +1,7 @@
 ﻿import React, {useEffect, useRef, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {getPetData, updatePetStatus} from './LocalDataManager';
-import type {PetStatus} from './LocalDataManager';
+import type {PetStatus} from '../types/pet';
 
 type StatusType = 'health' | 'happiness' | 'energy' | 'hunger';
 

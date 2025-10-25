@@ -53,3 +53,8 @@
 - Pointed tests at the new `src/app/App` entry and tightened `tsconfig.json` (`noImplicitAny`, `strictNullChecks`, backend exclusion).
 - Added npm scripts `typecheck` and `verify` so CI/pre-commit flows can run ESLint plus `tsc --noEmit`.
 - Verified `npx tsc --noEmit` now passes after excluding the backend project.
+
+## 2025-10-24 Step 12 - Data source toggle + API client
+- Introduced `src/config/dataSource.ts` + `src/services/petApiClient.ts` to switch between AsyncStorage and the Petiqa backend via `DATA_SOURCE_MODE`.
+- `LocalDataManager` now proxies reads/writes through the selected mode, caching remote state while keeping legacy AsyncStorage keys (`petName`, `character`, `oid`).
+- App onboarding calls `initializePetProfile` / `updateIdentity`, so creating or selecting a pet syncs with the API when remote mode is enabled.

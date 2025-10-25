@@ -1,6 +1,6 @@
 ﻿import React, {useEffect} from 'react';
 import {adjustInventoryItem, adjustPetStatus} from './LocalDataManager';
-import type {PetStatus} from './LocalDataManager';
+import type {PetStatus} from '../types/pet';
 
 type UseItemProps = {
   oid?: string | null;

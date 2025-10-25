@@ -1,5 +1,52 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+# Quick Start
+
+These steps spin up both the React Native client and the optional NestJS backend that powers the remote data source.
+
+## 1. Install dependencies
+
+```bash
+# From the project root
+npm install
+
+# Install backend deps
+cd Petiqa-Backend
+npm install
+cd ..
+```
+
+## 2. Start the backend (optional but required for `DATA_SOURCE_MODE = 'remote'`)
+
+The backend expects Node 18+, a running MongoDB instance, and (optionally) Swagger credentials.
+
+```bash
+cd Petiqa-Backend
+
+# (optional) create a .env file if you need to override defaults
+echo "MONGODB_URI=mongodb://localhost:27017/petiqa" > .env
+echo "PORT=3000" >> .env
+echo "ENABLE_SWAGGER=true" >> .env
+
+npm run start:dev
+```
+
+> **Tip:** If you run the backend on a device, tunnel the port with `adb reverse tcp:3000 tcp:3000`.
+
+## 3. Run the React Native app
+
+1. Configure the data source in `config.ts` (`DATA_SOURCE_MODE` can be `local` or `remote`).  
+2. Start Metro in one terminal:
+   ```bash
+   npm start
+   ```
+3. In another terminal install & launch the app:
+   ```bash
+   npm run android   # or npm run ios
+   ```
+
+`DATA_SOURCE_MODE='local'` uses AsyncStorage only. Switching to `'remote'` makes the app talk to the Nest backend at `API_BASE_URL`.
+
 # Getting Started
 
 >**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.

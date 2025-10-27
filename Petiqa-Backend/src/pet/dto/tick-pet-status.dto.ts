@@ -1,9 +1,9 @@
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, Max, Min } from 'class-validator';
 
 export class TickPetStatusDto {
   @IsOptional()
-  @IsInt()
-  @Min(1)
+  @IsNumber()
+  @Min(0)
   @Max(6 * 60)
   deltaMinutes?: number;
 }

@@ -93,7 +93,10 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
 
   // Function to generate and store new tasks in AsyncStorage
   const generateAndStoreTasks = async () => {
-    const newTasks = getRandomTasks(taskList, 5);
+    const constantTask = 'Daily Check in';
+    const remainingTasks = taskList.filter(task => task !== constantTask);
+    const randomTasks = getRandomTasks(remainingTasks, 4);
+    const newTasks = [constantTask, ...randomTasks];
     const currentDate = getCurrentDateString();
     setDailyTasks(newTasks);
     setDateString(currentDate);

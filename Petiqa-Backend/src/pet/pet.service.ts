@@ -169,11 +169,15 @@ export class PetService {
     const pet = await this.getPetById(petId);
     const updated = { ...pet.status };
 
+    console.log('Updating status for pet', petId, 'current status:', pet.status, 'dto:', dto);
+
     if (dto.set) {
-      updated.energy = this.clamp(dto.set.energy ?? updated.energy);
-      updated.happiness = this.clamp(dto.set.happiness ?? updated.happiness);
-      updated.hunger = this.clamp(dto.set.hunger ?? updated.hunger);
-      updated.health = this.clamp(dto.set.health ?? updated.health);
+      console.log('dto.set values:', dto.set);
+      if (dto.set.energy !== undefined) updated.energy = this.clamp(dto.set.energy);
+      if (dto.set.happiness !== undefined) updated.happiness = this.clamp(dto.set.happiness);
+      if (dto.set.hunger !== undefined) updated.hunger = this.clamp(dto.set.hunger);
+      if (dto.set.health !== undefined) updated.health = this.clamp(dto.set.health);
+      console.log('updated object after set:', updated);
     }
 
     if (dto.inc) {
@@ -185,9 +189,15 @@ export class PetService {
       updated.health = this.clamp(updated.health + (dto.inc.health ?? 0));
     }
 
-    pet.status = { ...updated, updatedAt: new Date() };
-    pet.initialStatus = { ...pet.status }; // Update initialStatus to current status
+    pet.status.energy = updated.energy;
+    pet.status.happiness = updated.happiness;
+    pet.status.hunger = updated.hunger;
+    pet.status.health = updated.health;
+    pet.status.updatedAt = new Date();
+    pet.markModified('status');
+    console.log('Saving new status:', pet.status);
     await pet.save();
+    console.log('Status saved successfully for pet', petId);
     return pet.status;
   }
 
@@ -198,13 +208,11 @@ export class PetService {
     petId: string,
     dto: TickPetStatusDto,
   ): Promise<StatusSnapshot> {
-    const minutes = dto.deltaMinutes ?? 5;
-    const decay = Math.floor(minutes / 5);
     const adjustment: UpdatePetStatusDto = {
       inc: {
-        energy: Math.min(5, decay),
-        hunger: -decay,
-        happiness: -decay,
+        energy: Math.floor((dto.deltaMinutes ?? 0.5) * 10),
+        hunger: Math.floor((dto.deltaMinutes ?? 0.5) * -10),
+        happiness: Math.floor((dto.deltaMinutes ?? 0.5) * -20),
       },
       source: 'tick',
     };

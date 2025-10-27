@@ -70,7 +70,7 @@ const PetBarStatus = ({ oid }) => {
   // Function to update pet status via backend
   const updatePetStatus = async (energyDelta, hungerDelta, happinessDelta) => {
     try {
-      await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
+      const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
         inc: {
           energy: energyDelta,
           hunger: hungerDelta,
@@ -79,8 +79,10 @@ const PetBarStatus = ({ oid }) => {
         source: 'tick'
       });
       console.log('Pet status updated successfully');
+      return response.data;
     } catch (error) {
       console.error('Error updating pet status', error);
+      throw error;
     }
   };
 
@@ -93,17 +95,36 @@ const PetBarStatus = ({ oid }) => {
       const hungerDelta = current.hunger > 0 ? -5 : 0;
       const happinessDelta = current.happiness > 0 ? -10 : 0;
 
-      // Update the database with the deltas
-      await updatePetStatus(energyDelta, hungerDelta, happinessDelta);
-
-      // Calculate new values and update ref and local state
+      // Calculate new values locally
       const newEnergy = Math.max(current.energy + energyDelta, 0);
       const newHunger = Math.max(current.hunger + hungerDelta, 0);
       const newHappiness = Math.max(current.happiness + happinessDelta, 0);
+
+      // Update local state immediately
       currentStatsRef.current = { energy: newEnergy, hunger: newHunger, happiness: newHappiness };
       setEnergy(newEnergy);
       setHunger(newHunger);
       setHappiness(newHappiness);
+
+      // Then post the new values to the database
+      try {
+        console.log('Posting new status values to database:', { newEnergy, newHunger, newHappiness });
+        const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
+          set: {
+            energy: newEnergy,
+            hunger: newHunger,
+            happiness: newHappiness
+          },
+          source: 'tick'
+        });
+        console.log('Database update response:', response.data);
+      } catch (error) {
+        console.error('Error updating pet status', error);
+        if (error.response) {
+          console.error('Response status:', error.response.status);
+          console.error('Response data:', error.response.data);
+        }
+      }
     }, 30 * 1000); // 30 seconds in milliseconds
 
     // Cleanup interval on component unmount

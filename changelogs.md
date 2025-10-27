@@ -13,7 +13,7 @@
 ## 2025-10-24 Step 3 - Align dependencies and native assets
 - Added navigation, storage, and gameplay library dependencies required by the migrated code.
 - Registered font assets via react-native.config.js to match the legacy setup.
-- Note: run `npm install` in PetiqaNext to refresh node_modules and package-lock.json.
+- Note: run `npm install` in Petiqa-test to refresh node_modules and package-lock.json.
 
 ## 2025-10-24 Step 4 - Move Petiqa app shell
 - Replaced the placeholder App component with the legacy navigation-driven App from Petiqa-test.
@@ -26,7 +26,7 @@
 - Ready to iterate on feature verification and modernize configuration next.
 
 ## 2025-10-24 Step 6 - Legacy project comparison
-- Documented why PetiqaNext runs while Petiqa-test stalls: RN 0.76 template vs 0.74 legacy stack.
+- Documented why Petiqa-test runs while Petiqa-test stalls: RN 0.76 template vs 0.74 legacy stack.
 - Noted Metro port mismatch (8081 vs 8082) and new-architecture toggle differences.
 - Recorded older project prerequisites: `npm install`, `npm run start`, and `npx react-native run-android --port 8082`.
 

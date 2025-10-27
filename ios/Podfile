@@ -14,7 +14,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'PetiqaNext' do
+target 'Petiqa-test' do
   config = use_native_modules!
 
   use_react_native!(
@@ -23,7 +23,7 @@ target 'PetiqaNext' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'PetiqaNextTests' do
+  target 'Petiqa-testTests' do
     inherit! :complete
     # Pods for testing
   end

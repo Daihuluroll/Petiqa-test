@@ -4,6 +4,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Alert } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 import CheckCoin from '../utils/CheckCoin';
 import { completeTask } from '../utils/TaskManager';
 import {checkQuizAchievements} from '../utils/AchievementManager'
@@ -171,23 +172,10 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation }) => {
 
   const updateCoins = async (oid: string, newCoins: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: 'Cluster-1',
-          database: 'Petiqa',
-          collection: 'allItems',
-          filter: { _id: { $oid: oid } },
-          update: { $set: { coins: newCoins } },
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            apiKey: 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0',
-          },
-        }
-      );
+      const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+        inc: { coins: newCoins - userCoins },
+        reason: 'Quiz reward',
+      });
 
       console.log('Coins updated successfully:', response.data);
     } catch (error) {

@@ -12,6 +12,7 @@ import { checkAccidentProneAchievement } from '../utils/AchievementManager';
 import CheckInsurance from '../utils/CheckInsurance';
 import axios from 'axios';
 import CheckCoin from '../utils/CheckCoin';
+import { baseUrl } from '../../config';
 
 type RootStackParamList = {
   Home: undefined;
@@ -84,50 +85,20 @@ const OsakaScreen: React.FC<OsakaScreenProps> = ({ route, navigation }) => {
 
   const updateInsurance = async (oid: string) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } },
-          update: { "$inc": { "Traveling": -1 } }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Items updated successfully:', response.data);
+      const response = await axios.put(`${baseUrl}petiqa/pet/${oid}/inventory`, {
+        adjustments: [{ item: 'Traveling', delta: -1 }]
+      });
+      console.log('Insurance updated successfully:', response.data);
     } catch (error) {
-      console.error('Error updating items:', error);
+      console.error('Error updating insurance:', error);
     }
   };
 
   const updateCoins = async (oid: string, newCoins: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
+      const response = await axios.put(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+        set: { coins: newCoins }
+      });
       console.log('Coins updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating coins:', error);

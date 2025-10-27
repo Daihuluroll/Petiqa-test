@@ -90,6 +90,9 @@ export class PetProfile {
   @Prop({ type: StatusSnapshotSchema, default: () => ({}) })
   status!: StatusSnapshot;
 
+  @Prop({ type: StatusSnapshotSchema, default: () => ({}) })
+  initialStatus!: StatusSnapshot;
+
   @Prop({ type: WalletSnapshotSchema, default: () => ({}) })
   wallet!: WalletSnapshot;
 

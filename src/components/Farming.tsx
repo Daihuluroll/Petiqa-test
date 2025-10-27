@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CheckCoin  from '../utils/CheckCoin';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 import { completeTask } from '../utils/TaskManager';
 import { checkFarmerAchievement } from '../utils/AchievementManager';
 
@@ -72,24 +73,9 @@ const FarmingScreen: React.FC = () => {
 
   const updateCoins = async (oid: string, newCoins: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
+      const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+        set: { coins: newCoins }
+      });
       console.log('Coins updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating coins:', error);

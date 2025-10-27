@@ -7,6 +7,7 @@ import { completeTask } from '../utils/TaskManager';
 import GetPetStatus from '../utils/GetPetStatus';
 import CheckCoin from '../utils/CheckCoin';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 
 type RootStackParamList = {
   Home: undefined;
@@ -65,52 +66,29 @@ const TravellingScreen: React.FC<TravellingScreenProps> = ({ navigation }) => {
 
   const updatePetStatus = async (oid: string, newEnergy: number, newHappiness: number, newHunger: number, newHealth: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": 
-            { "energy": newEnergy, "happiness": newHappiness, "hunger": newHunger, "health": newHealth }
-          }
+      const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
+        set: {
+          energy: newEnergy,
+          happiness: newHappiness,
+          hunger: newHunger,
+          health: newHealth
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Energy updated successfully:', response.data);
+        reason: 'Travel'
+      });
+
+      console.log('Pet status updated successfully:', response.data);
     } catch (error) {
-      console.error('Error updating energy:', error);
+      console.error('Error updating pet status:', error);
     }
   };
 
   const updateCoins = async (oid: string, newCoins: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
+      const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+        inc: { coins: newCoins - userCoins },
+        reason: 'Travel cost'
+      });
+
       console.log('Coins updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating coins:', error);

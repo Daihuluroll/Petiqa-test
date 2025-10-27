@@ -88,7 +88,10 @@ export class PetService {
     const pet = new this.petModel({
       petName: dto.petName,
       character: dto.character ?? null,
-      inventory: new Map<string, InventoryEntry>(),
+      status: dto.initialStatus ?? {},
+      initialStatus: dto.initialStatus ?? {},
+      wallet: dto.initialWallet ?? {},
+      inventory: dto.initialInventory ? new Map(Object.entries(dto.initialInventory)) : new Map<string, InventoryEntry>(),
     });
 
     return pet.save();
@@ -183,6 +186,7 @@ export class PetService {
     }
 
     pet.status = { ...updated, updatedAt: new Date() };
+    pet.initialStatus = { ...pet.status }; // Update initialStatus to current status
     await pet.save();
     return pet.status;
   }

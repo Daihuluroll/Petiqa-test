@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 
 const DisplayPoint = ({ oid }) => {
     const [point, setPoint] = useState(0);
@@ -8,29 +9,16 @@ const DisplayPoint = ({ oid }) => {
     useEffect(() => {
         const fetchPoint = async () => {
             try {
-                const response = await axios.post(
-                    'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/findOne', {
-                        dataSource: "Cluster-1",
-                        database: "Petiqa",
-                        collection: "allItems",
-                        filter: { "_id": { $oid: oid } },
-                        projection: { "points": 1 }
-                    },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-                        }
-                    }
-                );
-                setPoint(response.data.document.points);
+                const response = await axios.get(`${baseUrl}petiqa/pet/${oid}/wallet`);
+                setPoint(response.data.data.points);
             } catch (error) {
                 console.error('Error fetching point data:', error);
             }
         };
 
-        fetchPoint();
+        if (oid) {
+            fetchPoint();
+        }
     }, [oid]);
 
     return (

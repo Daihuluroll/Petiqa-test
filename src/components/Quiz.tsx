@@ -136,6 +136,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation }) => {
   const [userCoins, setUserCoins] = useState<number>(0);
   const [oid, setOid] = useState<string | null>(null);
   const [hasCompletedQuiz, setHasCompletedQuiz] = useState<boolean>(false);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
 
   useEffect(() => {
     const fetchOid = async () => {
@@ -170,13 +171,13 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation }) => {
     completeTask('Daily quiz');
   }, []);
 
-  const updateCoins = async (oid: string, newCoins: number) => {
+  const updateCoins = async (oid: string, newCoins: number, reason: string) => {
     try {
       const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
-        inc: { coins: newCoins - userCoins },
-        reason: 'Quiz reward',
+        set: { coins: newCoins },
+        reason: reason,
+        metadata: { source: 'quiz' }
       });
-
       console.log('Coins updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating coins:', error);
@@ -198,20 +199,22 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation }) => {
 
   const handleReward = async () => {
     const rewardCoins = score * 5;
-    let updatedCoins = userCoins + rewardCoins;
+    let increment = rewardCoins;
     if (score === 5) {
       Alert.alert('Congratulations!', 'You got all the answers correct! You earned BONUS 15 coins!');
-      updatedCoins += 15; // Bonus 15 coins for perfect score
-    
+      increment += 15; // Bonus 15 coins for perfect score
+
       // Update perfect score count
     const currentPerfectScores = await AsyncStorage.getItem('perfectQuizScores');
     const newPerfectScores = currentPerfectScores ? parseInt(currentPerfectScores) + 1 : 1;
     await AsyncStorage.setItem('perfectQuizScores', newPerfectScores.toString());
     await checkQuizAchievements();
     }
-    setUserCoins(updatedCoins);
+    const newCoins = userCoins + increment;
+    setUserCoins(newCoins);
     if (oid) {
-      updateCoins(oid, updatedCoins);
+      await updateCoins(oid, newCoins, `Quiz reward: ${score}/5 correct`);
+      setRefreshKey(prev => prev + 1); // Trigger refresh of CheckCoin
     }
     await AsyncStorage.setItem('quizCompletedDate', new Date().toDateString());
     handleBackButton();
@@ -285,7 +288,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation }) => {
             ))}
           </View>
 
-          {oid && <CheckCoin oid={oid} onCoinFetch={setUserCoins} />}
+          {oid && <CheckCoin key={refreshKey} oid={oid} onCoinFetch={setUserCoins} />}
 
           {feedback && (
             <View style={styles.feedbackContainer}>

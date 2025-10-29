@@ -174,10 +174,12 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
   }, []);
 
 
-  const updateCoins = async (oid: string, newCoins: number) => {
+  const updateCoins = async (oid: string, newCoins: number, reason: string) => {
     try {
       const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
-        set: { coins: newCoins }
+        set: { coins: newCoins },
+        reason: reason,
+        metadata: { source: 'task' }
       });
       console.log('Coins updated successfully:', response.data);
     } catch (error) {
@@ -187,7 +189,6 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
 
   const rewardSystem = async (taskName: string) => {
     if (taskStatus[taskName] && !taskStatus[`${taskName}_claimed`]) {
-      let updatedCoins = userCoins + 15;
       setTaskStatus((prevStatus) => {
         const updatedStatus = { ...prevStatus, [`${taskName}_claimed`]: true };
         AsyncStorage.setItem('taskStatus', JSON.stringify(updatedStatus)); // Persist the updated task status
@@ -195,9 +196,10 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
       });
       await completeTask(taskName);
 
-      setUserCoins(updatedCoins);
+      const newCoins = userCoins + 15;
+      setUserCoins(newCoins);
       if (oid) {
-        updateCoins(oid, updatedCoins);
+        updateCoins(oid, newCoins, `Task reward: ${taskName}`);
       }
     } else {
       Alert.alert('Reward already claimed', 'You have already claimed this reward.');

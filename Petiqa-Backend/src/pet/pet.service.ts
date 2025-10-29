@@ -91,7 +91,7 @@ export class PetService {
       status: dto.initialStatus ?? {},
       initialStatus: dto.initialStatus ?? {},
       wallet: dto.initialWallet ?? {},
-      inventory: dto.initialInventory ? new Map(Object.entries(dto.initialInventory)) : new Map<string, InventoryEntry>(),
+      inventory: dto.initialInventory ?? {},
     });
 
     return pet.save();
@@ -167,7 +167,12 @@ export class PetService {
     }
 
     const pet = await this.getPetById(petId);
-    const updated = { ...pet.status };
+    const updated = {
+      energy: pet.status.energy ?? 100,
+      happiness: pet.status.happiness ?? 100,
+      hunger: pet.status.hunger ?? 100,
+      health: pet.status.health ?? 100,
+    };
 
     console.log('Updating status for pet', petId, 'current status:', pet.status, 'dto:', dto);
 
@@ -244,7 +249,10 @@ export class PetService {
 
     const pet = await this.getPetById(petId);
     const original = { ...pet.wallet };
-    const updated = { ...pet.wallet };
+    const updated = {
+      coins: pet.wallet.coins ?? 0,
+      points: pet.wallet.points ?? 0,
+    };
 
     if (dto.set) {
       if (dto.set.coins !== undefined) {
@@ -264,7 +272,10 @@ export class PetService {
       }
     }
 
-    pet.wallet = { ...updated, updatedAt: new Date() };
+    pet.wallet.coins = updated.coins;
+    pet.wallet.points = updated.points;
+    pet.wallet.updatedAt = new Date();
+    pet.markModified('wallet');
     await pet.save();
 
     await this.persistWalletTransaction(
@@ -315,9 +326,14 @@ export class PetService {
     items?: string[],
   ): Promise<Record<string, InventoryEntry>> {
     const pet = await this.getPetById(petId);
-    const raw = pet.inventory ?? new Map<string, InventoryEntry>();
+    let raw = pet.inventory;
+    if (raw instanceof Map) {
+      raw = Object.fromEntries(raw);
+    } else if (!raw) {
+      raw = {};
+    }
     const result: Record<string, InventoryEntry> = {};
-    for (const [key, value] of raw.entries()) {
+    for (const [key, value] of Object.entries(raw)) {
       if (!items || items.includes(key)) {
         result[key] = value;
       }
@@ -333,12 +349,18 @@ export class PetService {
     dto: UpdateInventoryDto,
   ): Promise<Record<string, InventoryEntry>> {
     const pet = await this.getPetById(petId);
-    const inventory = pet.inventory ?? new Map<string, InventoryEntry>();
+    let inventory = pet.inventory;
+    if (inventory instanceof Map) {
+      inventory = Object.fromEntries(inventory);
+    } else if (!inventory) {
+      inventory = {};
+    }
 
     dto.adjustments.forEach((adj) => {
-      const existing = inventory.get(adj.item) ?? {
+      const kind = this.getItemKind(adj.item);
+      const existing = inventory[adj.item] ?? {
         name: adj.item,
-        kind: InventoryItemKind.MISC,
+        kind,
         quantity: 0,
         updatedAt: new Date(),
       };
@@ -359,15 +381,22 @@ export class PetService {
         );
       }
 
-      inventory.set(adj.item, {
+      inventory[adj.item] = {
         ...existing,
         quantity: newQuantity,
         updatedAt: new Date(),
-      });
+      };
     });
 
+    // Always assign the inventory to ensure it's an object
     pet.inventory = inventory;
+
+    // Mark the entire inventory field as modified for object changes
+    pet.markModified('inventory');
+
+    console.log('Saving inventory for pet', petId, 'inventory size:', Object.keys(inventory).length);
     await pet.save();
+    console.log('Inventory saved successfully for pet', petId);
     return this.getInventory(petId);
   }
 
@@ -382,9 +411,9 @@ export class PetService {
     const adjustments = [{ item: dto.item, delta: -quantity }];
     const result = await this.updateInventory(petId, { adjustments });
 
-    if (dto.applyEffects) {
+    if (dto.applyEffects && dto.inc) {
       await this.updatePetStatus(petId, {
-        inc: { energy: 5, happiness: 2 },
+        inc: dto.inc,
         source: 'item',
       });
     }
@@ -611,10 +640,10 @@ export class PetService {
     await this.walletTxModel.create({
       petId,
       currency,
-      amount: delta,
+      amount: Math.abs(delta),
       balanceAfter: balance,
       reason: dto.reason,
-      metadata: dto.metadata ?? {},
+      metadata: { ...(dto.metadata ?? {}), type: delta > 0 ? 'credit' : 'debit' },
     });
   }
 
@@ -633,6 +662,19 @@ export class PetService {
         tasks: [],
       }))
     );
+  }
+
+  private getItemKind(itemName: string): InventoryItemKind {
+    const foodItems = ['Pet Food', 'Treats', 'Chocolate Cake', 'Salad', 'Sausage', 'Potato Chips', 'Pizza', 'Fruits'];
+    const toyItems = ['Gaming Console', 'Football', 'Piano', 'Darts', 'Taiko Drum', 'Book'];
+    const cosmeticItems = ['Top Hat', 'Police Hat', 'Soldier Helm', 'Bow Tie', 'Suit Tie', 'Gold Chain', 'Police Badge', 'Baseball Cap', 'Sunglasses'];
+    const insuranceItems = ['Traveling', 'Medical', 'Accident'];
+
+    if (foodItems.includes(itemName)) return InventoryItemKind.FOOD;
+    if (toyItems.includes(itemName)) return InventoryItemKind.TOY;
+    if (cosmeticItems.includes(itemName)) return InventoryItemKind.COSMETIC;
+    if (insuranceItems.includes(itemName)) return InventoryItemKind.INSURANCE;
+    return InventoryItemKind.MISC;
   }
 
   private logAndThrow(

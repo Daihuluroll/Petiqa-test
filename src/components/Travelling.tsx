@@ -85,7 +85,7 @@ const TravellingScreen: React.FC<TravellingScreenProps> = ({ navigation }) => {
   const updateCoins = async (oid: string, newCoins: number) => {
     try {
       const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
-        inc: { coins: newCoins - userCoins },
+        set: { coins: newCoins },
         reason: 'Travel cost'
       });
 

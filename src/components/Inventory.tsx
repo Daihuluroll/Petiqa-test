@@ -385,12 +385,12 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
           visible={isEating}
           onRequestClose={() => setIsEating(false)}
         >
-          {oid && <UseItem oid={oid} item={modalItemName} />}
+          {oid && <UseItem oid={oid} item={modalItemName} effects={{ energy: energyCost, happiness: happinessCost, hunger: hungerCost, health: healthCost }} />}
           <View style={styles.modalContainer}>
-            <FastImage 
-              source={getPetImage(character)} 
-              style={styles.eatingAnimation} 
-              resizeMode={FastImage.resizeMode.contain} 
+            <FastImage
+              source={getPetImage(character)}
+              style={styles.eatingAnimation}
+              resizeMode={FastImage.resizeMode.contain}
             />
             <Text style={styles.modalText}>{petName} is eating {selectedFood}!</Text>
             <TouchableOpacity
@@ -409,7 +409,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
           visible={isUsing}
           onRequestClose={() => setIsUsing(false)}
         >
-          {oid && <UseItem oid={oid} item={modalItemName} />}
+          {oid && <UseItem oid={oid} item={modalItemName} effects={{ energy: energyCost, happiness: happinessCost, hunger: hungerCost, health: healthCost }} />}
           <View style={styles.modalContainer}>
             <Text style={styles.modalText}>{petName} is using {selectedItem}!</Text>
             <TouchableOpacity

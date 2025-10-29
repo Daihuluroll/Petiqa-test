@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StackScreenProps } from '@react-navigation/stack';
-import { StyleSheet, View, Text, TouchableOpacity, Image, Modal, ScrollView, Animated } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image, Modal, ScrollView, Animated, Platform } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import CheckCoin from '../utils/CheckCoin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,7 +8,7 @@ import axios from 'axios';
 import { completeTask } from '../utils/TaskManager';
 import { checkDressUpTimeAchievement, checkCoinSpendingAchievements } from '../utils/AchievementManager';
 import CheckPoint from '../utils/CheckPoint';
-import { baseUrl } from '../../config';
+const baseUrl = Platform.OS === 'android' ? "http://10.0.2.2:3000/" : "http://localhost:3000/";
 
 type RootStackParamList = {
   Home: undefined;
@@ -111,10 +111,10 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
     fetchOid();
   }, []);
 
-  const updateCoins = async (oid: string, newCoins: number) => {
+  const updateCoins = async (oid: string, price: number, currentCoins: number, currentPoints: number) => {
     try {
       await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
-        set: { coins: newCoins },
+        set: { coins: Math.max(0, currentCoins - price), points: currentPoints },
         reason: 'Purchase',
       });
       console.log('Coins updated successfully');
@@ -123,10 +123,10 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
     }
   };
 
-  const updatePoints = async (oid: string, newPoints: number) => {
+  const updatePoints = async (oid: string, price: number, currentCoins: number, currentPoints: number) => {
     try {
       await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
-        set: { points: newPoints },
+        set: { coins: currentCoins, points: Math.max(0, currentPoints - price) },
         reason: 'Purchase',
       });
       console.log('Points updated successfully');
@@ -135,11 +135,11 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
     }
   };
 
-  const updateItems = async (oid: string, itemName: string) => {
+  const updateItems = async (oid: string, itemName: string, reason: string = 'Purchase') => {
     try {
       await axios.patch(`${baseUrl}petiqa/pet/${oid}/inventory`, {
         adjustments: [{ item: itemName, delta: 1 }],
-        reason: 'Purchase',
+        reason,
       });
       console.log('Items updated successfully');
     } catch (error) {
@@ -173,23 +173,27 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (selectedItem) {
       // Check if the user has enough coins
       if (userCoins >= selectedItem.price) {
-        setPurchaseMessage(`You have purchased ${selectedItem.name}!`);
-        
-        const updatedCoins = userCoins - selectedItem.price;
-        setUserCoins(updatedCoins);
-        if (oid) {
-          updateCoins(oid, updatedCoins);
-          updateItems(oid, selectedItem.name);
-          checkCoinSpendingAchievements(selectedItem.price);
-          
-          // Check if the purchased item is an insurance product
-          if (insuranceItems.some(item => item.name === selectedItem.name)) {
-            completeTask('Buy an insurance product');
+        try {
+          if (oid) {
+            await updateCoins(oid, selectedItem.price, userCoins, userPoints);
+            await updateItems(oid, selectedItem.name);
+            checkCoinSpendingAchievements(selectedItem.price);
+
+            // Check if the purchased item is an insurance product
+            if (insuranceItems.some(item => item.name === selectedItem.name)) {
+              completeTask('Buy an insurance product');
+            }
           }
+          setPurchaseMessage(`You have purchased ${selectedItem.name}!`);
+          const updatedCoins = userCoins - selectedItem.price;
+          setUserCoins(updatedCoins);
+        } catch (error) {
+          console.error('Error updating coins:', error);
+          setPurchaseMessage(`Failed to purchase ${selectedItem.name}. Please try again.`);
         }
       } else {
         setPurchaseMessage(`You don't have enough coins to buy ${selectedItem.name}.`);
@@ -201,19 +205,23 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
   };
 
   // New handler for cosmetic purchases
-  const handleCosmeticPurchase = () => {
+  const handleCosmeticPurchase = async () => {
     if (selectedItem) {
       if (userPoints >= selectedItem.price) {
-        setPurchaseMessage(`You have purchased ${selectedItem.name} for ${selectedItem.price} points!`);
-        const updatedPoints = userPoints - selectedItem.price;
-        setUserPoints(updatedPoints);
-        if (oid) {
-          updatePoints(oid, updatedPoints);
-          updateItems(oid, selectedItem.name);
-        // Logic to update points in the backend would go here
-          if (cosmeticsItems.some(item => item.name === selectedItem.name)) {
-            checkDressUpTimeAchievement();
+        try {
+          if (oid) {
+            await updatePoints(oid, selectedItem.price, userCoins, userPoints);
+            await updateItems(oid, selectedItem.name);
+            if (cosmeticsItems.some(item => item.name === selectedItem.name)) {
+              checkDressUpTimeAchievement();
+            }
           }
+          setPurchaseMessage(`You have purchased ${selectedItem.name} for ${selectedItem.price} points!`);
+          const updatedPoints = userPoints - selectedItem.price;
+          setUserPoints(updatedPoints);
+        } catch (error) {
+          console.error('Error updating points:', error);
+          setPurchaseMessage(`Failed to purchase ${selectedItem.name}. Please try again.`);
         }
       } else {
         setPurchaseMessage(`You don't have enough points to buy ${selectedItem.name}.`);

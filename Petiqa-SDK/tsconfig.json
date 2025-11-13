@@ -16,11 +16,11 @@
     "paths": {
       "petiqa-sdk": ["src/index"]
     },
-    "types": ["@react-navigation/native"]   // ✅ ensure native types load and can be augmented
+    "types": ["@react-navigation/native"]   
   },
   "include": [
     "src",
-    "src/types/**/*.d.ts"                    // ✅ ensure your augmentation file is included
+    "src/types/**/*.d.ts"                   
   ],
   "exclude": ["node_modules", "dist", "example"]
 }

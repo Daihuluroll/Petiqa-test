@@ -1,9 +1,10 @@
-package com.separeact
+package com.petiqatest
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import com.swmansion.reanimated.ReanimatedJSIModulePackage
 
 class MainActivity : ReactActivity() {
 
@@ -19,4 +20,13 @@ class MainActivity : ReactActivity() {
    */
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+  override fun createReactActivityDelegate(): ReactActivityDelegate {
+    return object : ReactActivityDelegate(this, mainComponentName) {
+        override fun createRootView(): ReactRootView {
+            return ReactRootView(context).apply {
+                setJSIModulePackage(ReanimatedJSIModulePackage())
+            }
+        }
+    }
+}
 }

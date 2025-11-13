@@ -22,21 +22,8 @@ export const MainGameScreen = ({ route }) => {
     return (_jsx(View, { style: [styles.container, { backgroundColor: theme.background }], children: _jsxs(Text, { style: [styles.headerText, { color: theme.text }], children: ["Welcome ", petName, " the ", character] }) }));
 };
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerText: {
-        fontSize: 24,
-        marginBottom: 20,
-    },
-    button: {
-        padding: 10,
-        borderRadius: 5,
-        marginTop: 10,
-    },
-    buttonText: {
-        fontSize: 16,
-    },
+    container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    headerText: { fontSize: 24, marginBottom: 20 },
+    button: { padding: 10, borderRadius: 5, marginTop: 10 },
+    buttonText: { fontSize: 16 },
 });

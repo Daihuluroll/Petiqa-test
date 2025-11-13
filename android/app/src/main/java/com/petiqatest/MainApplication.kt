@@ -1,5 +1,6 @@
-package com.separeact
+package com.petiqatest
 
+import com.petiqatest.BuildConfig
 import android.app.Application
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication

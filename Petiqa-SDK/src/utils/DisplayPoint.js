@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import axios from 'axios';
-import { baseUrl } from '../../config';
+import { baseUrl } from '../config';
 
 const DisplayPoint = ({ oid }) => {
     const [point, setPoint] = useState(0);

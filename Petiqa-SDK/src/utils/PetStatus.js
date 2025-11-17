@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import axios from 'axios';
-import { baseUrl } from '../../config';
+import { baseUrl } from '../config';
 
 // Define BarRenderer Component
 const BarRenderer = ({ value, maxValue, type }) => {

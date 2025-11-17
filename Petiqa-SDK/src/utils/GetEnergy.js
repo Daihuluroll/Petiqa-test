@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { baseUrl } from '../../config';
+import { baseUrl } from '../config';
 
 const GetEnergy = ({ oid, onEnergyFetch }) => {
     const [energy, setEnergy] = useState(0);

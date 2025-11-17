@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { baseUrl } from '../../config';
+import { baseUrl } from '../config';
 
 const CheckPoint = ({ oid, onPointFetch }) => {
     const [point, setPoint] = useState(0);

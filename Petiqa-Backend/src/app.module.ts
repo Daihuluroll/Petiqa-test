@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
 import { configValidationSchema } from './config/validation';
 import { PetiqaModule } from './petiqa/petiqa.module';
+import { PetModule } from './pet/pet.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PetiqaModule } from './petiqa/petiqa.module';
       inject: [ConfigService],
     }),
     PetiqaModule,
+    PetModule,
   ],
 })
 export class AppModule {}

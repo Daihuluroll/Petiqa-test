@@ -11,6 +11,7 @@ import { checkAccidentProneAchievement } from '../utils/AchievementManager';
 import CheckInsurance from '../utils/CheckInsurance';
 import CheckCoin from '../utils/CheckCoin';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 
 type RootStackParamList = {
   Home: undefined;
@@ -85,53 +86,33 @@ const HollywoodScreen: React.FC<HollywoodScreenProps> = ({ route, navigation }) 
 
   const updateInsurance = async (oid: string) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } },
-          update: { "$inc": { "Traveling": -1 } }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Items updated successfully:', response.data);
+      const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/inventory`, {
+        adjustments: [{ item: 'Traveling', delta: -1 }]
+      });
+      console.log('Insurance updated successfully:', response.data);
     } catch (error) {
-      console.error('Error updating items:', error);
+      console.error('Error updating insurance:', error);
     }
   };
 
   const updateCoins = async (oid: string, newCoins: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": { "coins": newCoins } } // Updating the coins field
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
+      const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+        set: { coins: newCoins }
+      });
       console.log('Coins updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating coins:', error);
+    }
+  };
+
+  const getInsurance = async (oid: string) => {
+    try {
+      const response = await axios.get(`${baseUrl}petiqa/pet/${oid}/inventory`);
+      return response.data.data.Traveling?.quantity || 0;
+    } catch (error) {
+      console.error('Error fetching insurance:', error);
+      return 0;
     }
   };
 
@@ -178,32 +159,42 @@ const HollywoodScreen: React.FC<HollywoodScreenProps> = ({ route, navigation }) 
       const newCount = currentCount ? parseInt(currentCount) + 1 : 1;
       await AsyncStorage.setItem('lostLuggageEvents', newCount.toString());
 
-    // Check for the Accident prone achievement
-    checkAccidentProneAchievement();
+      // Check for the Accident prone achievement
+      checkAccidentProneAchievement();
     } else if (randomEvent < 0.2) { // 10% chance for friend encounter
       setModalVisible(true);
       setMessage("You have encountered a friend while travelling, how nice! You gain +10 energy");
       completeTask('Encounter any random event once');
+      // Update energy
+      if (oid) {
+        try {
+          await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
+            inc: { energy: 10 },
+            source: 'activity'
+          });
+          console.log('Energy updated successfully');
+        } catch (error) {
+          console.error('Error updating energy:', error);
+        }
+      }
     }
     // 80% chance for nothing to happen (do nothing)
   };
 
   // Handle modal close and check for insurance
-  const handleModalClose = () => {
+  const handleModalClose = async () => {
     setModalVisible(false);
     if (message === "Oh no! The airport lost your luggage...") {
-      // Check for insurance
-      if (itemValue > 0) {
-        setInsuranceModalVisible(true);
-        setInsuranceMessage("Luckily you have travelling insurance! You don't have to pay since the insurance company will cover the cost of the lost luggage.");
-        if (oid) {
+      if (oid) {
+        const insuranceCount = await getInsurance(oid);
+        if (insuranceCount > 0) {
+          setInsuranceModalVisible(true);
+          setInsuranceMessage("Luckily you have travelling insurance! You don't have to pay since the insurance company will cover the cost of the lost luggage.");
           updateInsurance(oid);
-        }
-      } else {
-        setInsuranceModalVisible(true);
-        setInsuranceMessage("Sadly you don't have travelling insurance... you will have to cover the cost of the lost luggage yourself. You lost 50 coins");
-        const updatedCoins = userCoins - 50;
-        if (oid) {
+        } else {
+          setInsuranceModalVisible(true);
+          setInsuranceMessage("Sadly you don't have travelling insurance... you will have to cover the cost of the lost luggage yourself. You lost 50 coins");
+          const updatedCoins = userCoins - 50;
           updateCoins(oid, updatedCoins);
         }
       }
@@ -213,8 +204,13 @@ const HollywoodScreen: React.FC<HollywoodScreenProps> = ({ route, navigation }) 
   useEffect(() => {
     loadCosmeticItems();
     loadPetEntity();
-    checkForRandomEvents();
   }, []);
+
+  useEffect(() => {
+    if (oid) {
+      checkForRandomEvents();
+    }
+  }, [oid]);
 
   useEffect(() => {
     addVisitedLocation('Hollywood'); // or 'Osaka'

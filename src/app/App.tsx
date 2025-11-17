@@ -5,6 +5,7 @@ import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-nativ
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 import MainGame from '../components/MainGame';
 import Store from '../components/Store';
 import Inventory from '../components/Inventory';
@@ -58,60 +59,56 @@ const Stack = createStackNavigator<RootStackParamList>();
 const savePetName = async (petName: string) => {
   try {
     const response = await axios.post(
-      'https://ap-southeast-1.aws.data.mongodb-api.com/app/petdata-byqpwja/endpoint/data/v1/action/insertOne', {
-        dataSource: "Cluster-1",
-        database: "Petiqa",
-        collection: "allItems",
-        document: 
-          { "petName": petName,
-            "energy": 100,
-            "happiness": 100,
-            "hunger": 100,
-            "health": 100,
-            "coins": 10000,
-            "points": 1000,
-            "salmon": 0,
-            "shrimp": 0,
-            "crab": 0,
-            "tuna": 0,
-            "wheat": 0,
-            "onion": 0,
-            "potato": 0,
-            "cucumber": 0,
-            "Pet Food": 0,
-            "Treats": 0,
-            "Chocolate Cake": 0,
-            "Salad": 0,
-            "Sausage": 0,
-            "Potato Chips": 0,
-            "Pizza": 0,
-            "Fruits": 0,
-            "Gaming Console": 0,
-            "Football": 0,
-            "Piano": 0,
-            "Darts": 0,
-            "Taiko Drum": 0,
-            "Book": 0,
-            "Traveling": 0,
-            "Medical": 0,
-            "Accident": 0
-          }
+      `${baseUrl}petiqa/pet`, {
+        petName: petName,
+        initialStatus: {
+          energy: 100,
+          happiness: 100,
+          hunger: 100,
+          health: 100,
         },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'apiKey': '44790142-9a06-406f-b7b6-672e604bc8cd'
+        initialWallet: {
+          coins: 10000,
+          points: 1000,
+        },
+        initialInventory: {
+          "salmon": { name: "salmon", kind: "food", quantity: 10 },
+          "shrimp": { name: "shrimp", kind: "food", quantity: 10 },
+          "crab": { name: "crab", kind: "food", quantity: 10 },
+          "tuna": { name: "tuna", kind: "food", quantity: 10 },
+          "wheat": { name: "wheat", kind: "material", quantity: 10 },
+          "onion": { name: "onion", kind: "food", quantity: 10 },
+          "potato": { name: "potato", kind: "food", quantity: 10 },
+          "cucumber": { name: "cucumber", kind: "food", quantity: 10 },
+          "Pet Food": { name: "Pet Food", kind: "food", quantity: 10 },
+          "Treats": { name: "Treats", kind: "food", quantity: 10 },
+          "Chocolate Cake": { name: "Chocolate Cake", kind: "food", quantity: 10 },
+          "Salad": { name: "Salad", kind: "food", quantity: 10 },
+          "Sausage": { name: "Sausage", kind: "food", quantity: 0 },
+          "Potato Chips": { name: "Potato Chips", kind: "food", quantity: 10 },
+          "Pizza": { name: "Pizza", kind: "food", quantity: 10 },
+          "Fruits": { name: "Fruits", kind: "food", quantity: 10 },
+          "Gaming Console": { name: "Gaming Console", kind: "toy", quantity: 10 },
+          "Football": { name: "Football", kind: "toy", quantity: 10 },
+          "Piano": { name: "Piano", kind: "toy", quantity: 10 },
+          "Darts": { name: "Darts", kind: "toy", quantity: 10 },
+          "Taiko Drum": { name: "Taiko Drum", kind: "toy", quantity: 10 },
+          "Book": { name: "Book", kind: "toy", quantity: 10 },
+          "Traveling": { name: "Traveling", kind: "misc", quantity: 10 },
+          "Medical": { name: "Medical", kind: "insurance", quantity: 10 },
+          "Accident": { name: "Accident", kind: "insurance", quantity: 10 }
         }
       }
     );
 
-    const oid = response.data.insertedId;
+    const oid = response.data.data._id;
     console.log("Successfully created new pet details with oid:", oid);
 
     return oid;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error saving pet name:", error);
+    console.error("Error response:", error.response?.data);
+    return null;
   }
 };
 
@@ -188,9 +185,13 @@ const CreateName: React.FC<CreateNameProps> = ({ navigation }) => {
     } else {
       setError(null);
       const oid = await savePetName(petName);
-      await AsyncStorage.setItem('petName', petName);  // Save pet name
-      await AsyncStorage.setItem('oid', oid);
-      navigation.navigate('PetSelection', { petName });
+      if (oid) {
+        await AsyncStorage.setItem('petName', petName);  // Save pet name
+        await AsyncStorage.setItem('oid', oid);
+        navigation.navigate('PetSelection', { petName });
+      } else {
+        setError('Failed to create pet. Please try again.');
+      }
     }
   };
 

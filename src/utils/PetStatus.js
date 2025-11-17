@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 
 // Define BarRenderer Component
 const BarRenderer = ({ value, maxValue, type }) => {
@@ -39,107 +40,100 @@ const PetBarStatus = ({ oid }) => {
   const [happiness, setHappiness] = useState(0);
   const [hunger, setHunger] = useState(0);
   const [health, setHealth] = useState(0);
+  const intervalRef = useRef(null);
+  const currentStatsRef = useRef({ energy: 0, hunger: 0, happiness: 0 });
 
   useEffect(() => {
     const fetchPetStatus = async () => {
       try {
-        const response = await axios.post(
-          'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/findOne',
-          {
-            dataSource: "Cluster-1",
-            database: "Petiqa",
-            collection: "allItems",
-            filter: { "_id": { $oid: oid } }, // Use the oid to filter the data
-            projection: { energy: 1, happiness: 1, hunger: 1, health: 1 } // Fetch relevant fields
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0' // Use your actual API key
-            }
-          }
-        );
-
-        const petData = response.data.document;
-        setEnergy(petData.energy || 0);
-        setHappiness(petData.happiness || 0);
-        setHunger(petData.hunger || 0);
-        setHealth(petData.health || 0);
+        const response = await axios.get(`${baseUrl}petiqa/pet/${oid}/status`);
+        const status = response.data.data;
+        const newEnergy = status.energy || 0;
+        const newHappiness = status.happiness || 0;
+        const newHunger = status.hunger || 0;
+        const newHealth = status.health || 0;
+        setEnergy(newEnergy);
+        setHappiness(newHappiness);
+        setHunger(newHunger);
+        setHealth(newHealth);
+        currentStatsRef.current = { energy: newEnergy, hunger: newHunger, happiness: newHappiness };
       } catch (error) {
         console.error('Error fetching pet status', error);
       }
     };
 
-    fetchPetStatus();
+    if (oid) {
+      fetchPetStatus();
+    }
   }, [oid]);
 
-  // Function to update pet status in MongoDB
-  const updatePetStatus = async (updatedEnergy, updatedHunger, updatedHappiness) => {
+  // Function to update pet status via backend
+  const updatePetStatus = async (energyDelta, hungerDelta, happinessDelta) => {
     try {
-      await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { $oid: oid } },
-          update: {
-            $set: {
-              "energy": updatedEnergy,
-              "hunger": updatedHunger,
-              "happiness": updatedHappiness
-            }
-          }
+      const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
+        inc: {
+          energy: energyDelta,
+          hunger: hungerDelta,
+          happiness: happinessDelta
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
+        source: 'tick'
+      });
       console.log('Pet status updated successfully');
+      return response.data;
     } catch (error) {
       console.error('Error updating pet status', error);
+      throw error;
     }
   };
 
-  // Deplete hunger and sleepiness every 30 minutes
+  // Deplete hunger and happiness, regenerate energy every 30 seconds
   useEffect(() => {
-    const petStatusOvertime = setInterval(() => {
-      setEnergy(prev => {
-        if (prev < 100) {
-            const updatedEnergy = Math.max(prev + 5, 0);
-            updatePetStatus(updatedEnergy, hunger, happiness); 
-            return updatedEnergy;
-        }
-        return prev;
-      });
+    intervalRef.current = setInterval(async () => {
+      // Calculate deltas based on current ref state
+      const current = currentStatsRef.current;
+      const energyDelta = current.energy < 100 ? 5 : 0;
+      const hungerDelta = current.hunger > 0 ? -5 : 0;
+      const happinessDelta = current.happiness > 0 ? -10 : 0;
 
-      setHunger(prev => {
-        if (prev > 0) {
-            const updatedHunger = Math.max(prev - 5, 0);
-            updatePetStatus(energy, updatedHunger, happiness);
-            return updatedHunger;
-        }
-        return prev;
-      });
+      // Calculate new values locally
+      const newEnergy = Math.max(current.energy + energyDelta, 0);
+      const newHunger = Math.max(current.hunger + hungerDelta, 0);
+      const newHappiness = Math.max(current.happiness + happinessDelta, 0);
 
-      setHappiness(prev => {
-        if (prev > 0) {
-            const updatedHappiness = Math.max(prev - 10, 0);
-            updatePetStatus(energy, hunger, updatedHappiness);
-            return updatedHappiness;
+      // Update local state immediately
+      currentStatsRef.current = { energy: newEnergy, hunger: newHunger, happiness: newHappiness };
+      setEnergy(newEnergy);
+      setHunger(newHunger);
+      setHappiness(newHappiness);
+
+      // Then post the new values to the database
+      try {
+        console.log('Posting new status values to database:', { newEnergy, newHunger, newHappiness });
+        const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
+          set: {
+            energy: newEnergy,
+            hunger: newHunger,
+            happiness: newHappiness
+          },
+          source: 'tick'
+        });
+        console.log('Database update response:', response.data);
+      } catch (error) {
+        console.error('Error updating pet status', error);
+        if (error.response) {
+          console.error('Response status:', error.response.status);
+          console.error('Response data:', error.response.data);
         }
-        return prev;
-      });
-    }, 30 * 1000); // 0.5 minutes in milliseconds
+      }
+    }, 30 * 1000); // 30 seconds in milliseconds
 
     // Cleanup interval on component unmount
-    return () => clearInterval(petStatusOvertime);
-  }, [energy, hunger, happiness, oid]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [oid]); // Remove dependencies to prevent re-setting interval
 
   return (
     <View style={styles.container}>

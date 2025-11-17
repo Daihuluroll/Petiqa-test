@@ -11,6 +11,7 @@ import GetPetStatus from '../utils/GetPetStatus';
 import { foodItems, toyItems, insuranceItems, cosmeticsItems } from '../utils/sharedData';
 import { completeTask } from '../utils/TaskManager';
 import { incrementInsuranceUseCount, checkCleanDietAchievement } from '../utils/AchievementManager';
+import { baseUrl } from '../../config';
 
 type RootStackParamList = {
   Home: undefined;
@@ -74,29 +75,17 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
 
   const updatePetStatus = async (oid: string, newEnergy: number, newHappiness: number, newHunger: number, newHealth: number) => {
     try {
-      const response = await axios.post(
-        'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne',
-        {
-          dataSource: "Cluster-1",
-          database: "Petiqa",
-          collection: "allItems",
-          filter: { "_id": { "$oid": oid } }, // Matching document by id
-          update: { "$set": 
-            { "energy": newEnergy, "happiness": newHappiness, "hunger": newHunger, "health": newHealth }
-          }
+      await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
+        set: {
+          energy: newEnergy,
+          happiness: newHappiness,
+          hunger: newHunger,
+          health: newHealth,
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-          }
-        }
-      );
-      
-      console.log('Energy updated successfully:', response.data);
+      });
+      console.log('Pet status updated successfully');
     } catch (error) {
-      console.error('Error updating energy:', error);
+      console.error('Error updating pet status:', error);
     }
   };
 
@@ -396,12 +385,12 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
           visible={isEating}
           onRequestClose={() => setIsEating(false)}
         >
-          {oid && <UseItem oid={oid} item={modalItemName} />}
+          {oid && <UseItem oid={oid} item={modalItemName} effects={{ energy: energyCost, happiness: happinessCost, hunger: hungerCost, health: healthCost }} />}
           <View style={styles.modalContainer}>
-            <FastImage 
-              source={getPetImage(character)} 
-              style={styles.eatingAnimation} 
-              resizeMode={FastImage.resizeMode.contain} 
+            <FastImage
+              source={getPetImage(character)}
+              style={styles.eatingAnimation}
+              resizeMode={FastImage.resizeMode.contain}
             />
             <Text style={styles.modalText}>{petName} is eating {selectedFood}!</Text>
             <TouchableOpacity
@@ -420,7 +409,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({ navigation }) => {
           visible={isUsing}
           onRequestClose={() => setIsUsing(false)}
         >
-          {oid && <UseItem oid={oid} item={modalItemName} />}
+          {oid && <UseItem oid={oid} item={modalItemName} effects={{ energy: energyCost, happiness: happinessCost, hunger: hungerCost, health: healthCost }} />}
           <View style={styles.modalContainer}>
             <Text style={styles.modalText}>{petName} is using {selectedItem}!</Text>
             <TouchableOpacity

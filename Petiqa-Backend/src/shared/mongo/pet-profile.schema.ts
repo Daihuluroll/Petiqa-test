@@ -90,15 +90,14 @@ export class PetProfile {
   @Prop({ type: StatusSnapshotSchema, default: () => ({}) })
   status!: StatusSnapshot;
 
+  @Prop({ type: StatusSnapshotSchema, default: () => ({}) })
+  initialStatus!: StatusSnapshot;
+
   @Prop({ type: WalletSnapshotSchema, default: () => ({}) })
   wallet!: WalletSnapshot;
 
-  @Prop({
-    type: Map,
-    of: InventoryEntrySchema,
-    default: {},
-  })
-  inventory!: Map<string, InventoryEntry>;
+  @Prop({ type: Object, default: {} })
+  inventory!: Record<string, InventoryEntry>;
 
   @Prop({ type: Number, default: 0 })
   totalExperience!: number;

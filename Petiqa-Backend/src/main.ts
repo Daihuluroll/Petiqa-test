@@ -12,6 +12,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   app.use(helmet());
+  app.enableCors();
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

@@ -46,4 +46,12 @@ export class UseInventoryItemDto {
   @IsOptional()
   @IsBoolean()
   applyEffects?: boolean;
+
+  @IsOptional()
+  inc?: {
+    energy?: number;
+    happiness?: number;
+    hunger?: number;
+    health?: number;
+  };
 }

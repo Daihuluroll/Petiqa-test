@@ -1,34 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 
-const UseItem = ({ oid, item }) => {
+const UseItem = ({ oid, item, effects = {} }) => {
     useEffect(() => {
-        const updateItem = async () => {
+        const useItem = async () => {
             try {
-                const response = await axios.post(
-                    'https://data.mongodb-api.com/app/data-wqzvrvg/endpoint/data/v1/action/updateOne', {
-                        dataSource: "Cluster-1",
-                        database: "Petiqa",
-                        collection: "allItems",
-                        filter: { "_id": { $oid: oid } },
-                        update: { $inc: { [item]: -1 } }
-                    },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'apiKey': 'MbLpt0MgPLbBLcCTjT9ocdTERiq3rWqEm0DkAwqgm8ITkU4EKeLsb5bLOP4jfdz0'
-                        }
-                    }
-                );
-                console.log('Item deducted:', response.data);
+                const payload = {
+                    item: item,
+                    quantity: 1,
+                    applyEffects: true
+                };
+                if (effects) {
+                    payload.inc = effects;
+                }
+                const response = await axios.post(`${baseUrl}petiqa/pet/${oid}/inventory/use`, payload);
+                console.log('Item used and status updated:', response.data);
             } catch (error) {
-                console.error('Error deducting item:', error);
+                
             }
         };
 
-        updateItem();
-    }, [oid, item]);
+        useItem();
+    }, [oid, item, effects]);
 
     return null;
 };

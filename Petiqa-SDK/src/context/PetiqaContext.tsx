@@ -13,7 +13,7 @@ interface PetiqaContextType {
   exitGame: () => void;
 }
 
-interface PetiqaProviderProps {
+export interface PetiqaProviderProps {
   apiService: PetiqaApiService;
   storageService: StorageService;
   theme?: PetiqaTheme;

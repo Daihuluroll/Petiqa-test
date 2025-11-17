@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { PetiqaGame } from 'petiqa-sdk'; // make sure the import path is correct
+import { PetiqaGame } from '../../Petiqa-SDK/src';
 
 type RootStackParamList = {
   Home: undefined;

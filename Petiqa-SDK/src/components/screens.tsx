@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { usePetiqa } from '../context/PetiqaContext';
-import { RootStackParamList } from './PetiqaGame'; // ✅ now works because the type is exported
+import { RootStackParamList } from './game/PetiqaGame'; // ✅ now works because the type is exported
 
 type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>;
 type CreateNameScreenProps = StackScreenProps<RootStackParamList, 'CreateName'>;

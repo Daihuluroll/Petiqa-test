@@ -1,14 +1,15 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, Modal, ScrollView, Animated } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image, Modal, ScrollView, Animated, Platform } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import CheckCoin from '../utils/CheckCoin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { baseUrl } from '../config';
 import { completeTask } from '../utils/TaskManager';
 import { checkDressUpTimeAchievement, checkCoinSpendingAchievements } from '../utils/AchievementManager';
 import CheckPoint from '../utils/CheckPoint';
+import { getRuntimeBaseUrl } from '../setupAxios';
+import { joinBasePath } from '../url';
 // Existing Categories
 const foodItems = [
     { name: 'Pet Food', icon: require('../../assets/images/PetFood.png'), price: 5 },
@@ -96,7 +97,7 @@ const StoreScreen = ({ navigation }) => {
     }, []);
     const updateCoins = async (oid, price, currentCoins, currentPoints) => {
         try {
-            await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+            await axios.patch(joinBasePath(getRuntimeBaseUrl(), `petiqa/pet/${oid}/wallet`), {
                 set: { coins: Math.max(0, currentCoins - price), points: currentPoints },
                 reason: 'Purchase',
             });
@@ -108,7 +109,7 @@ const StoreScreen = ({ navigation }) => {
     };
     const updatePoints = async (oid, price, currentCoins, currentPoints) => {
         try {
-            await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+            await axios.patch(joinBasePath(getRuntimeBaseUrl(), `petiqa/pet/${oid}/wallet`), {
                 set: { coins: currentCoins, points: Math.max(0, currentPoints - price) },
                 reason: 'Purchase',
             });
@@ -120,7 +121,7 @@ const StoreScreen = ({ navigation }) => {
     };
     const updateItems = async (oid, itemName, reason = 'Purchase') => {
         try {
-            await axios.patch(`${baseUrl}petiqa/pet/${oid}/inventory`, {
+            await axios.patch(joinBasePath(getRuntimeBaseUrl(), `petiqa/pet/${oid}/inventory`), {
                 adjustments: [{ item: itemName, delta: 1 }],
                 reason,
             });

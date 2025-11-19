@@ -1,3 +1,5 @@
+import './setupAxios';
+
 // Core exports
 export { PetiqaGame } from './components/game/PetiqaGame';
 export { PetiqaProvider } from './components/PetiqaProvider';

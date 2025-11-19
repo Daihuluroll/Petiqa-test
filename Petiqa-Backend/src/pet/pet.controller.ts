@@ -58,6 +58,14 @@ export class PetController {
     return this.petService.getPetById(petId);
   }
 
+  @Get('by-name/:petName')
+  @ApiOperation({ summary: 'Get pet profile by pet name' })
+  @ApiParam({ name: 'petName', description: 'Pet name (unique)' })
+  @ApiOkResponse({ description: 'Pet profile document' })
+  getPetByName(@Param('petName') petName: string) {
+    return this.petService.getPetByName(petName);
+  }
+
   @Patch(':petId/name')
   @ApiOperation({ summary: 'Update pet name or avatar' })
   @ApiParam({ name: 'petId', description: 'Pet identifier' })

@@ -32,12 +32,6 @@ export type RootStackParamList = {
         character: string;
     };
 };
-interface PetiqaGameProps {
-    userId?: string;
-    apiUrl?: string;
-    petName?: string;
-    character?: string;
-}
-declare const App: React.FC<PetiqaGameProps>;
-export declare const PetiqaGame: React.FC<PetiqaGameProps>;
+declare const App: React.FC;
+export declare const PetiqaGame: React.FC<{}>;
 export default App;

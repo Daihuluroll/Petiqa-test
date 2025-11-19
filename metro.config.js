@@ -11,7 +11,7 @@ const config = {
       server: {
         port: 8082,
       },
-      watchFolders: [path.resolve(__dirname, 'petiqa-sdk'), path.resolve(__dirname, 'petiqa-sdk/src'), path.resolve(__dirname, 'petiqa-sdk/dist')],
+      watchFolders: [path.resolve(__dirname, 'petiqa-sdk/dist')],
       resolver: {
         extraNodeModules: {
           'petiqa-sdk': path.resolve(__dirname, 'petiqa-sdk'),

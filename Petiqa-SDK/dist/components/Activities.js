@@ -4,7 +4,8 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image, Modal } fr
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { baseUrl } from '../config';
+import { getRuntimeBaseUrl } from '../setupAxios';
+import { joinBasePath } from '../url';
 import { completeTask } from '../utils/TaskManager';
 import GetPetStatus from '../utils/GetPetStatus';
 const activityItems = [
@@ -49,7 +50,7 @@ const ActivitiesScreen = ({ navigation }) => {
     }, []);
     const updatePetStatus = async (oid, newEnergy, newHappiness, newHunger, newHealth) => {
         try {
-            const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/status`, {
+            const response = await axios.patch(joinBasePath(getRuntimeBaseUrl(), `petiqa/pet/${oid}/status`), {
                 set: {
                     energy: newEnergy,
                     happiness: newHappiness,

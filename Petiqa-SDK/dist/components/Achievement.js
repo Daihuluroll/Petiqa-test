@@ -5,7 +5,8 @@ import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CheckPoint from '../utils/CheckPoint';
 import axios from 'axios';
-import { baseUrl } from '../config';
+import { getRuntimeBaseUrl } from '../setupAxios';
+import { joinBasePath } from '../url';
 const achievementsList = [
     {
         achievement: 'Missed you!',
@@ -260,7 +261,7 @@ const AchievementScreen = ({ navigation }) => {
     }, []);
     const updatePoints = async (oid, newPoints) => {
         try {
-            const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+            const response = await axios.patch(joinBasePath(getRuntimeBaseUrl(), `petiqa/pet/${oid}/wallet`), {
                 set: { points: newPoints }
             });
             console.log('Points updated successfully:', response.data);

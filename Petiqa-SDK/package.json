@@ -9,9 +9,9 @@
     "assets"
   ],
   "scripts": {
-    "build": "tsc",
-    "test": "jest",
-    "prepare": "npm run build"
+  "build": "tsc",
+  "test": "jest",
+  "prepare": "node -e \"const fs=require('fs'); if (fs.existsSync('src')) { require('child_process').execSync('npm run build', {stdio: 'inherit'}); } else { console.log('no src folder, skipping build'); }\""
   },
   "peerDependencies": {
     "react": "18.2.0",

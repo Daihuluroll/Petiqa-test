@@ -6,7 +6,8 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CheckCoin from '../utils/CheckCoin';
 import axios from 'axios';
-import { baseUrl } from '../config';
+import { getRuntimeBaseUrl } from '../setupAxios';
+import { joinBasePath } from '../url';
 import { completeTask } from '../utils/TaskManager';
 import { checkFarmerAchievement } from '../utils/AchievementManager';
 const cropImages = [
@@ -67,7 +68,7 @@ const FarmingScreen = () => {
     }, []);
     const updateCoins = async (oid, newCoins) => {
         try {
-            const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+            const response = await axios.patch(joinBasePath(getRuntimeBaseUrl(), `petiqa/pet/${oid}/wallet`), {
                 set: { coins: newCoins }
             });
             console.log('Coins updated successfully:', response.data);

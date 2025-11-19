@@ -113,6 +113,21 @@ export class PetService {
   }
 
   /**
+   * Fetch a pet profile by petName (unique name). Returns the document or throws not-found.
+   */
+  async getPetByName(petName: string): Promise<PetProfileDocument> {
+    const pet = await this.petModel.findOne({ petName });
+    if (!pet) {
+      this.logAndThrow(
+        CommonError.PETIQA.PET_NOT_FOUND,
+        `${this.getPetByName.name}: pet not found`,
+        { petName },
+      );
+    }
+    return pet;
+  }
+
+  /**
    * Update pet identity (name/character) while ensuring uniqueness.
    */
   async updatePetIdentity(

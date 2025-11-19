@@ -5,7 +5,8 @@ import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-import { baseUrl } from '../config';
+import { getRuntimeBaseUrl } from '../setupAxios';
+import { joinBasePath } from '../url';
 import CheckCoin from '../utils/CheckCoin';
 import { completeTask } from '../utils/TaskManager';
 import { checkFishermanAchievement } from '../utils/AchievementManager';
@@ -69,7 +70,7 @@ const FishingScreen = () => {
     }, []);
     const updateCoins = async (oid, newCoins) => {
         try {
-            const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
+            const response = await axios.patch(joinBasePath(getRuntimeBaseUrl(), `petiqa/pet/${oid}/wallet`), {
                 set: { coins: newCoins }
             });
             console.log('Coins updated successfully:', response.data);

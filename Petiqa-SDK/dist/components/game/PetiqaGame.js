@@ -1,5 +1,5 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
@@ -154,19 +154,8 @@ const PetSelection = ({ navigation, route }) => {
     };
     return (_jsxs(View, { style: styles.petSelectContainer, children: [_jsx(FastImage, { style: styles.petSelectBackgroundImage, source: require('../../../assets/images/background5.jpeg'), resizeMode: "cover" }), _jsxs(Text, { style: styles.petSelectHeaderText, children: ["Select a pet for ", petName, "!"] }), _jsxs(View, { style: styles.characterSelectionContainer, children: [_jsx(TouchableOpacity, { onPress: handlePreviousCharacter, style: styles.navButton, children: _jsx(Text, { style: styles.navButtonText, children: "<" }) }), _jsx(FastImage, { style: styles.petSelectImage, source: selectedCharacter.source, resizeMode: FastImage.resizeMode.contain }), _jsx(TouchableOpacity, { onPress: handleNextCharacter, style: styles.navButton, children: _jsx(Text, { style: styles.navButtonText, children: ">" }) })] }), _jsx(Text, { style: styles.characterNameText, children: selectedCharacter.name }), _jsx(TouchableOpacity, { style: styles.button, onPress: handleContinue, children: _jsx(Text, { style: styles.buttonText, children: "Continue" }) })] }));
 };
-const App = ({ userId, apiUrl, petName, character }) => {
-    // Store userId in AsyncStorage if provided
-    useEffect(() => {
-        if (userId) {
-            AsyncStorage.setItem('oid', userId).catch(err => console.error('Error setting userId:', err));
-        }
-        if (petName) {
-            AsyncStorage.setItem('petName', petName).catch(err => console.error('Error setting petName:', err));
-        }
-        if (character) {
-            AsyncStorage.setItem('character', character).catch(err => console.error('Error setting character:', err));
-        }
-    }, [userId, petName, character]);
+// App Navigation
+const App = () => {
     return (_jsx(NavigationContainer, { independent: true, children: _jsxs(Stack.Navigator, { initialRouteName: "Home", screenOptions: {
                 headerShown: false, // Disable the top toolbar for all screens
             }, children: [_jsx(Stack.Screen, { name: "Home", component: HomeScreen }), _jsx(Stack.Screen, { name: "CreateName", component: CreateName }), _jsx(Stack.Screen, { name: "PetSelection", component: PetSelection }), _jsx(Stack.Screen, { name: "MainGame", component: MainGame }), _jsx(Stack.Screen, { name: "Store", component: Store }), _jsx(Stack.Screen, { name: "Inventory", component: Inventory }), _jsx(Stack.Screen, { name: "Achievement", component: Achievement }), _jsx(Stack.Screen, { name: "Activities", component: Activities }), _jsx(Stack.Screen, { name: "Quiz", component: Quiz }), _jsx(Stack.Screen, { name: "Task", component: Task }), _jsx(Stack.Screen, { name: "Gym", component: Gym }), _jsx(Stack.Screen, { name: "StepCounter", component: StepCounter }), _jsx(Stack.Screen, { name: "Travelling", component: TravellingScreen }), _jsx(Stack.Screen, { name: "Weightlifting", component: WeightliftingScreen }), _jsx(Stack.Screen, { name: "Running", component: RunningScreen }), _jsx(Stack.Screen, { name: "Cycling", component: CyclingScreen }), _jsx(Stack.Screen, { name: "Farming", component: FarmingScreen }), _jsx(Stack.Screen, { name: "Fishing", component: FishingScreen }), _jsx(Stack.Screen, { name: "Hollywood", component: HollywoodScreen }), _jsx(Stack.Screen, { name: "Osaka", component: OsakaScreen })] }) }));

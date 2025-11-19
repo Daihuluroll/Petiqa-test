@@ -6,8 +6,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from '../screens/HomeScreen';
 import SDKTestScreen from '../screens/SDKTestScreen';
 
-// IMPORTANT: import your provider
-import { PetiqaProvider } from '../../Petiqa-SDK/src/components/PetiqaProvider';
+// IMPORTANT: import from dist/ to test if compiled SDK works independently
+import { PetiqaProvider } from '../../Petiqa-SDK/dist/components/PetiqaProvider';
 
 export type RootStackParamList = {
   Home: undefined;

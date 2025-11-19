@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { usePetiqa } from '../../Petiqa-SDK/src';
+import { usePetiqa } from '../../Petiqa-SDK/dist';
 
 type RootStackParamList = {
   Home: undefined;

@@ -11,7 +11,7 @@ interface PetiqaContextType {
     savePet: (petData: PetData) => Promise<void>;
     exitGame: () => void;
 }
-interface PetiqaProviderProps {
+export interface PetiqaProviderProps {
     apiService: PetiqaApiService;
     storageService: StorageService;
     theme?: PetiqaTheme;

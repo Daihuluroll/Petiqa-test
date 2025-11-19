@@ -1,6 +1,6 @@
 import React from 'react';
 import type { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from './PetiqaGame';
+import { RootStackParamList } from './game/PetiqaGame';
 type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>;
 type CreateNameScreenProps = StackScreenProps<RootStackParamList, 'CreateName'>;
 type PetSelectionScreenProps = StackScreenProps<RootStackParamList, 'PetSelection'>;

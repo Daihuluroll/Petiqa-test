@@ -47,7 +47,7 @@ export const PetiqaProvider: React.FC<PetiqaProviderProps> = ({
 
   useEffect(() => {
     loadPetData();
-  }, []);
+  }, [storageService]);
 
   const loadPetData = async () => {
     try {
@@ -56,7 +56,9 @@ export const PetiqaProvider: React.FC<PetiqaProviderProps> = ({
         setPetData(data);
       }
     } catch (err) {
-      setError('Failed to load pet data');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load pet data';
+      console.error('PetiqaContext loadPetData error:', errorMsg);
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -73,7 +75,9 @@ export const PetiqaProvider: React.FC<PetiqaProviderProps> = ({
         onSave(updatedData);
       }
     } catch (err) {
-      setError('Failed to update pet status');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update pet status';
+      console.error('PetiqaContext updatePetStatus error:', errorMsg);
+      setError(errorMsg);
     }
   };
 
@@ -85,7 +89,9 @@ export const PetiqaProvider: React.FC<PetiqaProviderProps> = ({
         onSave(data);
       }
     } catch (err) {
-      setError('Failed to save pet data');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save pet data';
+      console.error('PetiqaContext savePet error:', errorMsg);
+      setError(errorMsg);
     }
   };
 

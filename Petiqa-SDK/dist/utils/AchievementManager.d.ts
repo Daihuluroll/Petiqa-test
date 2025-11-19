@@ -1,0 +1,12 @@
+export declare const incrementAppOpenCount: () => Promise<void>;
+export declare const addVisitedLocation: (location: string) => Promise<void>;
+export declare const incrementInsuranceUseCount: () => Promise<void>;
+export declare const updateStepCount: (steps: number) => Promise<void>;
+export declare const checkCleanDietAchievement: () => Promise<void>;
+export declare const checkFishermanAchievement: () => Promise<void>;
+export declare const checkFarmerAchievement: () => Promise<void>;
+export declare const checkAccidentProneAchievement: () => Promise<void>;
+export declare const checkDressUpTimeAchievement: () => Promise<void>;
+export declare const checkQuizAchievements: () => Promise<void>;
+export declare const checkCoinSpendingAchievements: (coinsSpent: number) => Promise<void>;
+export declare const checkBackInShapeAchievement: (previousHealthValue: number, currentHealthValue: number) => Promise<void>;

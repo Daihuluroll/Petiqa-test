@@ -15,7 +15,7 @@ export const PetiqaProvider = ({ apiService, storageService, theme = defaultThem
     const [error, setError] = useState(null);
     useEffect(() => {
         loadPetData();
-    }, []);
+    }, [storageService]);
     const loadPetData = async () => {
         try {
             const data = await storageService.getPetData();
@@ -24,7 +24,9 @@ export const PetiqaProvider = ({ apiService, storageService, theme = defaultThem
             }
         }
         catch (err) {
-            setError('Failed to load pet data');
+            const errorMsg = err instanceof Error ? err.message : 'Failed to load pet data';
+            console.error('PetiqaContext loadPetData error:', errorMsg);
+            setError(errorMsg);
         }
         finally {
             setLoading(false);
@@ -42,7 +44,9 @@ export const PetiqaProvider = ({ apiService, storageService, theme = defaultThem
             }
         }
         catch (err) {
-            setError('Failed to update pet status');
+            const errorMsg = err instanceof Error ? err.message : 'Failed to update pet status';
+            console.error('PetiqaContext updatePetStatus error:', errorMsg);
+            setError(errorMsg);
         }
     };
     const savePet = async (data) => {
@@ -54,7 +58,9 @@ export const PetiqaProvider = ({ apiService, storageService, theme = defaultThem
             }
         }
         catch (err) {
-            setError('Failed to save pet data');
+            const errorMsg = err instanceof Error ? err.message : 'Failed to save pet data';
+            console.error('PetiqaContext savePet error:', errorMsg);
+            setError(errorMsg);
         }
     };
     const exitGame = () => {

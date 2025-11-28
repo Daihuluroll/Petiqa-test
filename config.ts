@@ -1,1 +1,1 @@
-export const baseUrl = "http://10.0.2.2:3000/";
+export const baseUrl = "https://smile-uat.etiqa.com.my/api/";

@@ -85,16 +85,95 @@ export class PetService {
       );
     }
 
+    // Use flat wallet fields (not nested subdocument)
+    const walletCoins = Number(dto.initialWallet?.coins ?? 0);
+    const walletPoints = Number(dto.initialWallet?.points ?? 0);
+
+    // ALWAYS provide explicit status values - don't rely on schema defaults
+    const statusData = {
+      energy: dto.initialStatus?.energy ?? 100,
+      happiness: dto.initialStatus?.happiness ?? 100,
+      hunger: dto.initialStatus?.hunger ?? 100,
+      health: dto.initialStatus?.health ?? 100,
+      updatedAt: new Date(),
+    };
+
+    console.log(`[createPet] Creating pet: ${dto.petName}`);
+    console.log(`[createPet] walletCoins: ${walletCoins}, walletPoints: ${walletPoints}`);
+    console.log(`[createPet] status:`, JSON.stringify(statusData));
+
     const pet = new this.petModel({
       petName: dto.petName,
       character: dto.character ?? null,
-      status: dto.initialStatus ?? {},
-      initialStatus: dto.initialStatus ?? {},
-      wallet: dto.initialWallet ?? {},
+      status: statusData,
+      initialStatus: statusData,
+      walletCoins,
+      walletPoints,
+      walletUpdatedAt: new Date(),
       inventory: dto.initialInventory ?? {},
     });
 
-    return pet.save();
+    console.log(`[createPet] Before save, pet document:`, {
+      petName: pet.petName,
+      walletCoins: pet.walletCoins,
+      walletPoints: pet.walletPoints,
+      wallet: pet.wallet, // virtual getter
+      status: pet.status,
+    });
+
+    const saved = await pet.save();
+    
+    console.log(`[createPet] After save, saved document:`, {
+      _id: saved._id,
+      petName: saved.petName,
+      walletCoins: saved.walletCoins,
+      walletPoints: saved.walletPoints,
+      wallet: saved.wallet,
+      status: saved.status,
+    });
+
+    // Verify the save by reading back from DB immediately
+    const verified = await this.petModel.findById(saved._id);
+    console.log(`[createPet] Verified from DB:`, {
+      _id: verified?._id,
+      petName: verified?.petName,
+      walletCoins: verified?.walletCoins,
+      walletPoints: verified?.walletPoints,
+      wallet: verified?.wallet,
+      status: verified?.status,
+    });
+
+    if (!verified?.walletCoins || verified.walletCoins === 0) {
+      console.warn(`[createPet] WARNING: Wallet coins is 0 after save. Attempting to fix...`);
+      
+      // If wallet didn't save properly, try explicit update with flat fields
+      const updateResult = await this.petModel.collection.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            walletCoins: Number(walletCoins),
+            walletPoints: Number(walletPoints),
+            walletUpdatedAt: new Date(),
+          },
+        }
+      );
+      
+      console.log(`[createPet] Emergency wallet update result:`, {
+        acknowledged: updateResult.acknowledged,
+        matchedCount: updateResult.matchedCount,
+        modifiedCount: updateResult.modifiedCount,
+      });
+
+      // Read again to verify
+      const reverified = await this.petModel.findById(saved._id);
+      console.log(`[createPet] After emergency fix:`, {
+        walletCoins: reverified?.walletCoins,
+        walletPoints: reverified?.walletPoints,
+        wallet: reverified?.wallet,
+      });
+    }
+
+    return saved;
   }
 
   /**
@@ -229,6 +308,8 @@ export class PetService {
    */
   async getWallet(petId: string): Promise<WalletSnapshot> {
     const pet = await this.getPetById(petId);
+    console.log(`[PetService.getWallet] petId: ${petId}`);
+    console.log(`[PetService.getWallet] returning wallet:`, JSON.stringify(pet.wallet));
     return pet.wallet;
   }
 
@@ -248,52 +329,110 @@ export class PetService {
     }
 
     const pet = await this.getPetById(petId);
+    console.log(`[updateWallet] petId: ${petId}`);
+    console.log(`[updateWallet] current wallet:`, JSON.stringify(pet.wallet));
+    console.log(`[updateWallet] incoming dto:`, JSON.stringify(dto));
+
     const original = { ...pet.wallet };
-    const updated = {
-      coins: pet.wallet.coins ?? 0,
-      points: pet.wallet.points ?? 0,
+    let updated = {
+      coins: pet.wallet?.coins ?? 0,
+      points: pet.wallet?.points ?? 0,
     };
 
+    // Ensure they're numbers
+    updated.coins = Number(updated.coins) || 0;
+    updated.points = Number(updated.points) || 0;
+
+    console.log(`[updateWallet] parsed current coins: ${updated.coins}, points: ${updated.points}`);
+
     if (dto.set) {
+      console.log(`[updateWallet] applying SET:`, JSON.stringify(dto.set));
       if (dto.set.coins !== undefined) {
-        updated.coins = Math.max(0, dto.set.coins);
+        updated.coins = Math.max(0, Number(dto.set.coins));
       }
       if (dto.set.points !== undefined) {
-        updated.points = Math.max(0, dto.set.points);
+        updated.points = Math.max(0, Number(dto.set.points));
       }
     }
 
     if (dto.inc) {
-      if (dto.inc.coins) {
-        updated.coins = Math.max(0, updated.coins + dto.inc.coins);
+      console.log(`[updateWallet] applying INC:`, JSON.stringify(dto.inc));
+      if (dto.inc.coins !== undefined && dto.inc.coins !== 0) {
+        updated.coins = Math.max(0, updated.coins + Number(dto.inc.coins));
       }
-      if (dto.inc.points) {
-        updated.points = Math.max(0, updated.points + dto.inc.points);
+      if (dto.inc.points !== undefined && dto.inc.points !== 0) {
+        updated.points = Math.max(0, updated.points + Number(dto.inc.points));
       }
     }
 
-    pet.wallet.coins = updated.coins;
-    pet.wallet.points = updated.points;
-    pet.wallet.updatedAt = new Date();
-    pet.markModified('wallet');
-    await pet.save();
+    console.log(`[updateWallet] final computed coins: ${updated.coins}, points: ${updated.points}`);
 
-    await this.persistWalletTransaction(
-      pet._id,
-      WalletCurrency.COIN,
-      updated.coins - original.coins,
-      updated.coins,
-      dto,
-    );
-    await this.persistWalletTransaction(
-      pet._id,
-      WalletCurrency.POINT,
-      updated.points - original.points,
-      updated.points,
-      dto,
+    const petObjectId = this.toObjectId(petId);
+
+    // Use flat fields instead of subdocument
+    const updateObj: any = {
+      $set: {
+        walletCoins: Number(updated.coins),
+        walletPoints: Number(updated.points),
+        walletUpdatedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    };
+
+    console.log(`[updateWallet] executing updateOne with:`, JSON.stringify(updateObj));
+
+    // Use updateOne with explicit type conversion
+    const result = await this.petModel.collection.updateOne(
+      { _id: petObjectId },
+      updateObj
     );
 
-    return pet.wallet;
+    console.log(`[updateWallet] updateOne result:`, {
+      acknowledged: result.acknowledged,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    });
+
+    if (result.matchedCount === 0) {
+      throw new Error(`Pet with id ${petId} not found in database`);
+    }
+
+    // Fetch updated doc to verify and return
+    const updatedDoc = await this.petModel.findById(petObjectId);
+    if (!updatedDoc) {
+      throw new Error(`Failed to fetch updated pet document`);
+    }
+
+    console.log(`[updateWallet] verified wallet after update:`, JSON.stringify(updatedDoc.wallet));
+
+    // Record transactions
+    const coinDelta = updated.coins - (original.coins ?? 0);
+    const pointDelta = updated.points - (original.points ?? 0);
+
+    console.log(`[updateWallet] recording transactions - coin delta: ${coinDelta}, point delta: ${pointDelta}`);
+
+    if (coinDelta !== 0) {
+      await this.persistWalletTransaction(
+        petObjectId,
+        WalletCurrency.COIN,
+        coinDelta,
+        updated.coins,
+        dto,
+      );
+    }
+
+    if (pointDelta !== 0) {
+      await this.persistWalletTransaction(
+        petObjectId,
+        WalletCurrency.POINT,
+        pointDelta,
+        updated.points,
+        dto,
+      );
+    }
+
+    console.log(`[updateWallet] returning final wallet:`, JSON.stringify(updatedDoc.wallet));
+    return updatedDoc.wallet;
   }
 
   /**

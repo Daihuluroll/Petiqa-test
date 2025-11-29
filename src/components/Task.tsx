@@ -66,6 +66,7 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
   const [taskStatus, setTaskStatus] = useState<TaskStatus>({});
   const [userCoins, setUserCoins] = useState<number>(0);
   const [oid, setOid] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   useEffect(() => {
     const loadStatus = async () => {
@@ -174,16 +175,38 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
   }, []);
 
 
-  const updateCoins = async (oid: string, newCoins: number, reason: string) => {
+  const updateCoins = async (oid: string, deltaCoins: number, reason: string) => {
     try {
+      console.log(`[Task] Updating coins - URL: ${baseUrl}petiqa/pet/${oid}/wallet`);
+      console.log(`[Task] Payload: inc: { coins: ${deltaCoins} }, reason: ${reason}`);
+      console.log(`[Task] Current userCoins state: ${userCoins}`);
+      
       const response = await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
-        set: { coins: newCoins },
+        inc: { coins: deltaCoins },
         reason: reason,
         metadata: { source: 'task' }
       });
-      console.log('Coins updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating coins:', error);
+
+      console.log('[Task] Full PATCH response:', JSON.stringify(response.data));
+
+      // Immediately GET the wallet to confirm persisted values on server
+      try {
+        const getResp = await axios.get(`${baseUrl}petiqa/pet/${oid}/wallet`);
+        console.log('[Task] GET after PATCH response:', JSON.stringify(getResp.data));
+      } catch (getErr: any) {
+        console.error('[Task] Error fetching wallet after PATCH:', getErr.message);
+        if (getErr.response) console.error('[Task] GET error data:', JSON.stringify(getErr.response.data));
+      }
+
+      console.log('[Task] Coins update flow completed');
+      return response.data;
+    } catch (error: any) {
+      console.error('[Task] Error updating coins:', error.message);
+      if (error.response) {
+        console.error('[Task] Response status:', error.response.status);
+        console.error('[Task] Response data:', JSON.stringify(error.response.data));
+      }
+      throw error;
     }
   };
 
@@ -196,10 +219,25 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
       });
       await completeTask(taskName);
 
-      const newCoins = userCoins + 15;
+      // Use increment to add 15 coins to whatever is on backend
+      const rewardAmount = 15;
+      console.log(`[Task] rewardSystem: Adding ${rewardAmount} coins to backend`);
+      const newCoins = userCoins + rewardAmount;
       setUserCoins(newCoins);
       if (oid) {
-        updateCoins(oid, newCoins, `Task reward: ${taskName}`);
+        try {
+          await updateCoins(oid, rewardAmount, `Task reward: ${taskName}`);
+          console.log(`[Task] updateCoins completed successfully`);
+          
+          // Wait a bit for backend to persist
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Trigger a refresh of the coins after update completes
+          console.log(`[Task] Triggering refresh for coins`);
+          setRefreshTrigger(prev => prev + 1);
+        } catch (error) {
+          console.error(`[Task] rewardSystem error:`, error);
+        }
       }
     } else {
       Alert.alert('Reward already claimed', 'You have already claimed this reward.');
@@ -216,7 +254,7 @@ const DailyTaskScreen: React.FC<DailyTaskScreenProps> = ({ navigation }) => {
       <Text style={styles.headerText}>Daily Task</Text>
 
       {/* Fetch coins using CheckCoin */}
-      {oid && <CheckCoin oid={oid} onCoinFetch={setUserCoins} />}
+      {oid && <CheckCoin oid={oid} onCoinFetch={setUserCoins} refreshTrigger={refreshTrigger} />}
 
       <View style={styles.taskListContainer}>
         <FlatList

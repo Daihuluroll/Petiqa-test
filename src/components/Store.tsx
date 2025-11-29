@@ -5,10 +5,10 @@ import FastImage from 'react-native-fast-image';
 import CheckCoin from '../utils/CheckCoin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { baseUrl } from '../../config';
 import { completeTask } from '../utils/TaskManager';
 import { checkDressUpTimeAchievement, checkCoinSpendingAchievements } from '../utils/AchievementManager';
 import CheckPoint from '../utils/CheckPoint';
-const baseUrl = Platform.OS === 'android' ? "http://10.0.2.2:3000/" : "http://localhost:3000/";
 
 type RootStackParamList = {
   Home: undefined;
@@ -69,6 +69,7 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
   const [userPoints, setUserPoints] = useState<number>(0); 
   const [hasEnoughCoins, setHasEnoughCoins] = useState<boolean>(true); // State to track if user has enough coins
   const [oid, setOid] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   useEffect(() => {
     if (purchaseMessage) {
@@ -113,25 +114,55 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
 
   const updateCoins = async (oid: string, price: number, currentCoins: number, currentPoints: number) => {
     try {
+      console.log(`[Store] Updating coins - URL: ${baseUrl}petiqa/pet/${oid}/wallet`);
+      console.log(`[Store] Deducting ${price} coins (using increment: -${price})`);
       await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
-        set: { coins: Math.max(0, currentCoins - price), points: currentPoints },
+        inc: { coins: -price },
         reason: 'Purchase',
       });
-      console.log('Coins updated successfully');
-    } catch (error) {
-      console.error('Error updating coins:', error);
+      console.log('[Store] PATCH completed, verifying by fetching wallet...');
+      try {
+        const getResp = await axios.get(`${baseUrl}petiqa/pet/${oid}/wallet`);
+        console.log('[Store] GET after PATCH response:', JSON.stringify(getResp.data));
+      } catch (err: any) {
+        console.error('[Store] Error getting wallet after PATCH:', err.message);
+        if (err.response) console.error('[Store] GET error data:', JSON.stringify(err.response.data));
+      }
+      // Trigger refresh after update
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error: any) {
+      console.error('[Store] Error updating coins:', error.message);
+      if (error.response) {
+        console.error('[Store] Response status:', error.response.status);
+        console.error('[Store] Response data:', JSON.stringify(error.response.data));
+      }
     }
   };
 
   const updatePoints = async (oid: string, price: number, currentCoins: number, currentPoints: number) => {
     try {
+      console.log(`[Store] Updating points - URL: ${baseUrl}petiqa/pet/${oid}/wallet`);
+      console.log(`[Store] Deducting ${price} points (using increment: -${price})`);
       await axios.patch(`${baseUrl}petiqa/pet/${oid}/wallet`, {
-        set: { coins: currentCoins, points: Math.max(0, currentPoints - price) },
+        inc: { points: -price },
         reason: 'Purchase',
       });
-      console.log('Points updated successfully');
-    } catch (error) {
-      console.error('Error updating points:', error);
+      console.log('[Store] PATCH completed, verifying by fetching wallet...');
+      try {
+        const getResp = await axios.get(`${baseUrl}petiqa/pet/${oid}/wallet`);
+        console.log('[Store] GET after PATCH response (points):', JSON.stringify(getResp.data));
+      } catch (err: any) {
+        console.error('[Store] Error getting wallet after PATCH (points):', err.message);
+        if (err.response) console.error('[Store] GET error data:', JSON.stringify(err.response.data));
+      }
+      // Trigger refresh after update
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error: any) {
+      console.error('[Store] Error updating points:', error.message);
+      if (error.response) {
+        console.error('[Store] Response status:', error.response.status);
+        console.error('[Store] Response data:', JSON.stringify(error.response.data));
+      }
     }
   };
 
@@ -283,8 +314,8 @@ const StoreScreen: React.FC<StoreScreenProps> = ({ navigation }) => {
       />
       <Text style={styles.headerText}>Store</Text>
 
-      {oid && <CheckCoin oid={oid} onCoinFetch={setUserCoins} />}
-      {oid && <CheckPoint oid={oid} onPointFetch={setUserPoints} />}
+      {oid && <CheckCoin oid={oid} onCoinFetch={setUserCoins} refreshTrigger={refreshTrigger} />}
+      {oid && <CheckPoint oid={oid} onPointFetch={setUserPoints} refreshTrigger={refreshTrigger} />}
 
       {!selectedCategory ? (
         <View style={styles.menuContainer}>

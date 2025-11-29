@@ -43,13 +43,13 @@ export const StatusSnapshotSchema =
 
 @Schema({ _id: false })
 export class WalletSnapshot {
-  @Prop({ min: 0, default: 0 })
+  @Prop({ type: Number, min: 0, default: 0 })
   coins!: number;
 
-  @Prop({ min: 0, default: 0 })
+  @Prop({ type: Number, min: 0, default: 0 })
   points!: number;
 
-  @Prop({ default: Date.now })
+  @Prop({ type: Date, default: Date.now })
   updatedAt!: Date;
 }
 
@@ -93,8 +93,15 @@ export class PetProfile {
   @Prop({ type: StatusSnapshotSchema, default: () => ({}) })
   initialStatus!: StatusSnapshot;
 
-  @Prop({ type: WalletSnapshotSchema, default: () => ({}) })
-  wallet!: WalletSnapshot;
+  // Wallet fields - flat instead of nested subdocument
+  @Prop({ type: Number, min: 0, default: 0 })
+  walletCoins!: number;
+
+  @Prop({ type: Number, min: 0, default: 0 })
+  walletPoints!: number;
+
+  @Prop({ type: Date, default: Date.now })
+  walletUpdatedAt!: Date;
 
   @Prop({ type: Object, default: {} })
   inventory!: Record<string, InventoryEntry>;
@@ -114,16 +121,25 @@ export class PetProfile {
     ],
     default: [],
   })
-  @Prop({
-    type: [
-      {
-        name: { type: String },
-        value: { type: String },
-      },
-    ],
-    default: [],
-  })
   metadata!: Array<{ name: string; value: string }>;
+
+  // Virtual getter for backward compatibility
+  get wallet(): WalletSnapshot {
+    return {
+      coins: this.walletCoins ?? 0,
+      points: this.walletPoints ?? 0,
+      updatedAt: this.walletUpdatedAt ?? new Date(),
+    };
+  }
+
+  // Virtual setter for backward compatibility
+  set wallet(value: WalletSnapshot) {
+    if (value) {
+      this.walletCoins = value.coins ?? 0;
+      this.walletPoints = value.points ?? 0;
+      this.walletUpdatedAt = value.updatedAt ?? new Date();
+    }
+  }
 }
 
 export const PetProfileSchema = SchemaFactory.createForClass(PetProfile);
